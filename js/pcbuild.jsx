@@ -158,7 +158,7 @@ function buildScene(threeRef) {
   // ── Explode groups (для анімації розкриття) ──
   // ── НАЛАШТУВАННЯ ЗМІЩЕННЯ ──────────────────
   const EXPLODE_FRONT = 160;   // передня панель — вперед (по Z)
-  const EXPLODE_GLASS = 260;   // скляна бічна   — вліво  (по X)
+  const EXPLODE_GLASS = 380;   // скляна бічна   — вліво  (по X)
   const EXPLODE_TOP   = 120;   // верхня + ручка — вгору  (по Y)
   // ────────────────────────────────────────────
 
@@ -479,11 +479,12 @@ function buildScene(threeRef) {
   mb(ms(0xcccccc, 0.3, 0.9), 7,  2, 58, 124, 66); // Металева лапка фіксатора
 
   // ══ DDR4 СЛОТИ (4 шт, праворуч) ══
+  const ramSlots = [140, 154, 168, 182];
   for (let i = 0; i < 4; i++) {
-    mb(ms(0x111111, 0.5, 0.4), 8, 95, 7, 105, 140 + i * 14);
+    mb(ms(0x111111, 0.5, 0.4), 8, 95, 7, 105, ramSlots[i]);
     // Защіпки слотів (сірі)
-    mb(ms(0x444444, 0.4, 0.5), 8,  6, 7, 200, 140 + i * 14);
-    mb(ms(0x444444, 0.4, 0.5), 8,  6, 7,  99, 140 + i * 14);
+    mb(ms(0x444444, 0.4, 0.5), 8,  6, 7, 200, ramSlots[i]);
+    mb(ms(0x444444, 0.4, 0.5), 8,  6, 7,  99, ramSlots[i]);
   }
 
   // ══ 24-PIN ATX ЖИВЛЕННЯ (правий край) ══
@@ -533,6 +534,73 @@ function buildScene(threeRef) {
 
   // ══ I/O ПАНЕЛЬ (роз'єми на задній стінці) ══
   mb(ms(0x0a0a0a, 0.5, 0.2), 12, 35, 72, 110, -5); // заглушка портів всередині кожуха
+
+  // ── RAM: Kingston FURY Beast 32GB DDR4 (2×16GB у слотах 1 і 3) ──
+  const EXPLODE_RAM = 150; // вліво (між материнкою і процесором)
+  const ramGroup = new THREE.Group();
+  caseGroup.add(ramGroup);
+
+  // mbr: box helper аналогічний mb(), але додає в ramGroup
+  const mbr = (mat, protrude, h, d, oy, oz) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(protrude, h, d), mat);
+    mesh.position.set(mpX - protrude / 2, mpY + oy + h / 2, mpZ + oz + d / 2);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    ramGroup.add(mesh);
+    return mesh;
+  };
+
+  [0, 2].forEach(i => {
+    const oz = ramSlots[i];
+
+    // 1. PCB (чорна текстолітова плата)
+    mbr(ms(0x050505, 0.8, 0.1), 31, 133, 1.6, 86, oz + 2.7);
+
+    // 2. Радіатор (дві бокові пластини)
+    mbr(ms(0x1a1a1c, 0.4, 0.6), 33, 134, 2.2, 85.5, oz + 0.4);
+    mbr(ms(0x1a1a1c, 0.4, 0.6), 33, 134, 2.2, 85.5, oz + 4.4);
+
+    // 3. Центральний потовщений рельєф
+    mbr(ms(0x1f1f22, 0.3, 0.7), 34, 90, 2.6, 107.5, oz + 0.2);
+    mbr(ms(0x1f1f22, 0.3, 0.7), 34, 90, 2.6, 107.5, oz + 4.2);
+
+    // 4. Верхній гребінь (зубці охолодження)
+    for (let j = 0; j < 5; j++) {
+      mbr(ms(0x1a1a1c, 0.4, 0.6), 35, 14, 5.8, 175 - j * 20, oz + 0.6);
+    }
+
+    // 5. Логотип "FURY"
+    const furyCanvas = document.createElement('canvas');
+    furyCanvas.width = 256; furyCanvas.height = 64;
+    const fctx2 = furyCanvas.getContext('2d');
+    fctx2.fillStyle = '#ffffff';
+    fctx2.font = 'italic bold 56px Arial';
+    fctx2.textAlign = 'center';
+    fctx2.fillText('FURY', 128, 50);
+    const furyText = new THREE.Mesh(
+      new THREE.PlaneGeometry(7, 70),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(furyCanvas), transparent: true, opacity: 0.9, depthWrite: false })
+    );
+    furyText.rotation.y = Math.PI / 2;
+    furyText.position.set(mpX - 34, mpY + 150, mpZ + oz + 3.6);
+    ramGroup.add(furyText);
+
+    // 6. Напис "BEAST"
+    const beastCanvas = document.createElement('canvas');
+    beastCanvas.width = 128; beastCanvas.height = 32;
+    const bctx2 = beastCanvas.getContext('2d');
+    bctx2.fillStyle = '#aaaaaa';
+    bctx2.font = 'bold 24px Arial';
+    bctx2.textAlign = 'center';
+    bctx2.fillText('BEAST', 64, 24);
+    const beastText = new THREE.Mesh(
+      new THREE.PlaneGeometry(7, 35),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(beastCanvas), transparent: true, opacity: 0.7, depthWrite: false })
+    );
+    beastText.rotation.y = Math.PI / 2;
+    beastText.position.set(mpX - 34, mpY + 110, mpZ + oz + 3.6);
+    ramGroup.add(beastText);
+  });
 
   // ── CPU: AMD Ryzen 5 5600 ──
   // Сидить на сокеті AM4: oy=126, oz=68, розмір 40×40мм (трохи менше сокету 54×54)
@@ -835,12 +903,12 @@ function buildScene(threeRef) {
   threeRef.current = {
     ...threeRef.current,
     scene, camera, renderer, spotLight, bodyMeshes, handleMeshes, hddLed,
-    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup,
-    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER,
+    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup, ramGroup,
+    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM,
   };
   return { scene, camera, renderer, spotLight, bodyMeshes, handleMeshes, hddLed,
-    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup,
-    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER };
+    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup, ramGroup,
+    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM };
 }
 
 // ── Component ────────────────────────────────────────────────────────
@@ -862,19 +930,23 @@ function PCBuild() {
   const [timHover,     setTimHover]     = useState(false);
   const [coolerPinned, setCoolerPinned] = useState(false);
   const [coolerHover,  setCoolerHover]  = useState(false);
+  const [ramPinned,    setRamPinned]    = useState(false);
+  const [ramHover,     setRamHover]     = useState(false);
   const handleActive = handleHover || handlePinned;
   const moboActive   = moboHover   || moboPinned;
   const cpuActive    = cpuHover    || cpuPinned;
   const timActive    = timHover    || timPinned;
   const coolerActive = coolerHover || coolerPinned;
+  const ramActive    = ramHover    || ramPinned;
 
-  const activePanel = coolerActive ? 'cooler' : timActive ? 'tim' : cpuActive ? 'cpu' : moboActive ? 'mobo' : handleActive ? 'case' : null;
+  const activePanel = ramActive ? 'ram' : coolerActive ? 'cooler' : timActive ? 'tim' : cpuActive ? 'cpu' : moboActive ? 'mobo' : handleActive ? 'case' : null;
 
   const caseData   = window.BUILD_DATA?.parts?.find(p => p.id === 'case');
   const moboData   = window.BUILD_DATA?.parts?.find(p => p.id === 'mobo');
   const cpuData    = window.BUILD_DATA?.parts?.find(p => p.id === 'cpu');
   const timData    = window.BUILD_DATA?.parts?.find(p => p.id === 'tim');
   const coolerData = window.BUILD_DATA?.parts?.find(p => p.id === 'cooler');
+  const ramData    = window.BUILD_DATA?.parts?.find(p => p.id === 'ram');
 
   // Sync handle emissive
   useEffect(() => {
@@ -930,6 +1002,17 @@ function PCBuild() {
     });
   }, [moboActive]);
 
+  // Sync ram emissive
+  useEffect(() => {
+    const { ramGroup } = threeRef.current;
+    if (!ramGroup) return;
+    ramGroup.traverse(m => {
+      if (!m.isMesh || !m.material || !m.material.emissive) return;
+      m.material.emissive = new THREE.Color(ramActive ? 0x0033cc : 0x000000);
+      m.material.emissiveIntensity = ramActive ? 0.4 : 0;
+    });
+  }, [ramActive]);
+
   // Three.js init
   useEffect(() => {
     if (!mountRef.current || !window.THREE) return;
@@ -982,21 +1065,24 @@ function PCBuild() {
         hoverRef.current = nowHover;
         setHandleHover(nowHover);
       }
-      // Cooler → TIM → CPU → Mobo (пріоритет)
-      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg } = threeRef.current;
-      const clHits = clg ? raycaster.intersectObjects(clg.children, true) : [];
+      // RAM → Cooler → TIM → CPU → Mobo (пріоритет)
+      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg, ramGroup: rg } = threeRef.current;
+      const rHits = rg ? raycaster.intersectObjects(rg.children, true) : [];
+      const hitsRam = rHits.length > 0;
+      const clHits = (!hitsRam && clg) ? raycaster.intersectObjects(clg.children, true) : [];
       const hitsCooler = clHits.length > 0;
-      const tHits = (!hitsCooler && tg) ? raycaster.intersectObjects(tg.children, true) : [];
+      const tHits = (!hitsRam && !hitsCooler && tg) ? raycaster.intersectObjects(tg.children, true) : [];
       const hitsTim = tHits.length > 0;
-      const cHits = (!hitsCooler && !hitsTim && cg) ? raycaster.intersectObjects(cg.children, true) : [];
+      const cHits = (!hitsRam && !hitsCooler && !hitsTim && cg) ? raycaster.intersectObjects(cg.children, true) : [];
       const hitsCpu = cHits.length > 0;
-      const mHits = (!hitsCooler && !hitsTim && !hitsCpu && mg) ? raycaster.intersectObjects(mg.children, true) : [];
+      const mHits = (!hitsRam && !hitsCooler && !hitsTim && !hitsCpu && mg) ? raycaster.intersectObjects(mg.children, true) : [];
       const hitsMobo = mHits.length > 0;
+      setRamHover(hitsRam);
       setCoolerHover(hitsCooler);
       setTimHover(hitsTim);
       setCpuHover(hitsCpu);
       setMoboHover(hitsMobo);
-      renderer.domElement.style.cursor = (nowHover || hitsCooler || hitsTim || hitsCpu || hitsMobo) ? 'pointer' : 'grab';
+      renderer.domElement.style.cursor = (nowHover || hitsRam || hitsCooler || hitsTim || hitsCpu || hitsMobo) ? 'pointer' : 'grab';
     };
     const onMouseLeave = () => { spotLight.intensity = 0; };
 
@@ -1008,13 +1094,15 @@ function PCBuild() {
       getNDC(e);
       raycaster.setFromCamera(ndcMouse, camera);
       const hitHandle = raycaster.intersectObjects(handleMeshes, false).length > 0;
-      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg } = threeRef.current;
-      const hitCooler = clg ? raycaster.intersectObjects(clg.children, true).length > 0 : false;
-      const hitTim    = !hitCooler && tg  ? raycaster.intersectObjects(tg.children,  true).length > 0 : false;
-      const hitCpu    = !hitCooler && !hitTim && cg ? raycaster.intersectObjects(cg.children, true).length > 0 : false;
-      const hitMobo   = !hitCooler && !hitTim && !hitCpu && mg ? raycaster.intersectObjects(mg.children, true).length > 0 : false;
-      const reset = () => { setHandlePinned(false); setMoboPinned(false); setCpuPinned(false); setTimPinned(false); setCoolerPinned(false); };
+      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg, ramGroup: rg } = threeRef.current;
+      const hitRam    = rg ? raycaster.intersectObjects(rg.children, true).length > 0 : false;
+      const hitCooler = !hitRam && clg ? raycaster.intersectObjects(clg.children, true).length > 0 : false;
+      const hitTim    = !hitRam && !hitCooler && tg  ? raycaster.intersectObjects(tg.children,  true).length > 0 : false;
+      const hitCpu    = !hitRam && !hitCooler && !hitTim && cg ? raycaster.intersectObjects(cg.children, true).length > 0 : false;
+      const hitMobo   = !hitRam && !hitCooler && !hitTim && !hitCpu && mg ? raycaster.intersectObjects(mg.children, true).length > 0 : false;
+      const reset = () => { setHandlePinned(false); setMoboPinned(false); setCpuPinned(false); setTimPinned(false); setCoolerPinned(false); setRamPinned(false); };
       if (hitHandle)      { reset(); setHandlePinned(v => !v); }
+      else if (hitRam)    { reset(); setRamPinned(v => !v); }
       else if (hitCooler) { reset(); setCoolerPinned(v => !v); }
       else if (hitTim)    { reset(); setTimPinned(v => !v); }
       else if (hitCpu)    { reset(); setCpuPinned(v => !v); }
@@ -1046,13 +1134,14 @@ function PCBuild() {
 
       // Плавна анімація розкриття (lerp до target)
       const target = explodeRef.current;
-      const { frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, coolerGroup,
-              EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER } = threeRef.current;
+      const { frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, coolerGroup, ramGroup,
+              EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM } = threeRef.current;
       if (frontGroup && glassGroup && topGroup) {
         frontGroup.position.z  += (target * EXPLODE_FRONT   - frontGroup.position.z)  * 0.08;
         glassGroup.position.x  += (target * (-EXPLODE_GLASS) - glassGroup.position.x)  * 0.08;
         topGroup.position.y    += (target * EXPLODE_TOP     - topGroup.position.y)    * 0.08;
         if (moboGroup)   moboGroup.position.x   += (target * (-EXPLODE_MOBO)   - moboGroup.position.x)   * 0.08;
+        if (ramGroup)    ramGroup.position.x    += (target * (-EXPLODE_RAM)    - ramGroup.position.x)    * 0.08;
         if (cpuGroup)    cpuGroup.position.x    += (target * (-EXPLODE_CPU)    - cpuGroup.position.x)    * 0.08;
         if (timGroup)    timGroup.position.x    += (target * (-EXPLODE_TIM)    - timGroup.position.x)    * 0.08;
         if (coolerGroup) coolerGroup.position.x += (target * (-EXPLODE_COOLER) - coolerGroup.position.x) * 0.08;
@@ -1138,10 +1227,11 @@ function PCBuild() {
                 : activePanel === 'cpu'    && cpuData    ? cpuData.cat
                 : activePanel === 'tim'    && timData    ? timData.cat
                 : activePanel === 'cooler' && coolerData ? coolerData.cat
+                : activePanel === 'ram'    && ramData    ? ramData.cat
                 : 'Клікни на деталь'}
               </span>
               {activePanel && <span className="label" style={{ color: 'var(--red)' }}>
-                {activePanel === 'case' ? '/01/' : activePanel === 'mobo' ? '/02/' : activePanel === 'cpu' ? '/03/' : activePanel === 'tim' ? '/04/' : '/05/'}
+                {activePanel === 'case' ? '/01/' : activePanel === 'mobo' ? '/02/' : activePanel === 'cpu' ? '/03/' : activePanel === 'tim' ? '/04/' : activePanel === 'cooler' ? '/05/' : '/06/'}
               </span>}
             </div>
             {activePanel === 'case' && caseData ? (
@@ -1217,6 +1307,21 @@ function PCBuild() {
                 <div className="build-panel-price">
                   <span className="label">Ціна</span>
                   <span className="amount mono">{moboData.price.toLocaleString('uk-UA')} ₴</span>
+                </div>
+              </>
+            ) : activePanel === 'ram' && ramData ? (
+              <>
+                <div className="build-panel-title">{ramData.name}</div>
+                <div className="build-panel-sub">{ramData.model}</div>
+                <p className="build-panel-desc">{ramData.desc}</p>
+                <div className="build-panel-specs">
+                  {ramData.specs.map(([k, v], i) => (
+                    <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
+                  ))}
+                </div>
+                <div className="build-panel-price">
+                  <span className="label">Ціна</span>
+                  <span className="amount mono">{ramData.price.toLocaleString('uk-UA')} ₴</span>
                 </div>
               </>
             ) : (
