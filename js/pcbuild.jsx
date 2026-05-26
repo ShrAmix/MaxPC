@@ -16,9 +16,9 @@ function makeMeshDotTexture(repeatX, repeatY) {
   c.width = 32; c.height = 32;
   const ctx = c.getContext('2d');
   ctx.clearRect(0, 0, 32, 32);
-  ctx.fillStyle = 'rgba(185,190,215,0.22)';
+  ctx.fillStyle = 'rgba(160,165,185,0.35)';
   ctx.beginPath();
-  ctx.arc(16, 16, 2.2, 0, Math.PI * 2);
+  ctx.arc(16, 16, 1.4, 0, Math.PI * 2);
   ctx.fill();
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
@@ -67,9 +67,8 @@ function buildScene(threeRef) {
   const camera = new THREE.PerspectiveCamera(28, 1, 1, 4000);
   // Default view: front-left-above — shows glass panel (left) + front mesh
   // X negative = left side (glass), Z negative = front face side
-  // Front = Z=D (positive Z), glass = X=0 (negative X side)
-  // Camera: front-left-above
-  camera.position.set(-380, 260, 560);
+  // Camera: front-left-above — sees front mesh panel (Z=D) + glass side (X=0)
+  camera.position.set(-300, 220, 700);
   camera.lookAt(0, 0, 0);
 
   // ── Lights ──
@@ -127,7 +126,7 @@ function buildScene(threeRef) {
 
   // Mesh overlay (round-hole perforated panels)
   const makeMeshMat = (rX, rY) => new THREE.MeshBasicMaterial({
-    map: makeMeshDotTexture(rX, rY), transparent: true, depthWrite: false,
+    map: makeMeshDotTexture(rX, rY), transparent: true, depthWrite: false, side: THREE.DoubleSide,
   });
 
   // ── Case group (origin: bottom-left-back corner, centered at world 0,0,0) ──
@@ -156,43 +155,55 @@ function buildScene(threeRef) {
   const bodyMeshes = [];
   const T = 3.5; // wall thickness
 
-  // ── Structural walls (steel shell) ──
-  // Top panel — solid steel
-  bodyMeshes.push(addBox(caseGroup, matBody.clone(), W, T, D, W/2, H - T/2, D/2));
-  // Bottom panel
-  bodyMeshes.push(addBox(caseGroup, matBody.clone(), W, T, D, W/2, T/2, D/2));
-  // Front face (лицева, перфорація) — Z=D side
-  bodyMeshes.push(addBox(caseGroup, matBody.clone(), W, H, T, W/2, H/2, D - T/2));
-  // Rear face — Z=0 side
-  bodyMeshes.push(addBox(caseGroup, matBody.clone(), W, H, T, W/2, H/2, T/2));
-  // Right side wall — solid steel
-  bodyMeshes.push(addBox(caseGroup, matBody.clone(), T, H, D, W - T/2, H/2, D/2));
-  // Left side wall — steel frame behind glass (thin strips: top, bottom, front edge, rear edge)
-  // Glass frame: 15mm border on all 4 sides
-  const GF = 15; // glass frame width
-  // top strip
-  bodyMeshes.push(addBox(caseGroup, matGlassFrame.clone(), T, GF, D - GF*2, T/2, H - GF/2, D/2));
-  // bottom strip
-  bodyMeshes.push(addBox(caseGroup, matGlassFrame.clone(), T, GF, D - GF*2, T/2, GF/2, D/2));
-  // front strip
-  bodyMeshes.push(addBox(caseGroup, matGlassFrame.clone(), T, H, GF, T/2, H/2, GF/2));
-  // rear strip
-  bodyMeshes.push(addBox(caseGroup, matGlassFrame.clone(), T, H, GF, T/2, H/2, D - GF/2));
+  // ── Explode groups (для анімації розкриття) ──
+  // ── НАЛАШТУВАННЯ ЗМІЩЕННЯ ──────────────────
+  const EXPLODE_FRONT = 160;   // передня панель — вперед (по Z)
+  const EXPLODE_GLASS = 140;   // скляна бічна   — вліво  (по X)
+  const EXPLODE_TOP   = 120;   // верхня + ручка — вгору  (по Y)
+  // ────────────────────────────────────────────
 
-  // ── Glass panel (left side, x=0) ──
-  const glassW = D - GF * 2;  // width of glass along Z
-  const glassH = H - GF * 2;  // height of glass along Y
-  const glassMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(glassW, glassH),
-    matGlass
-  );
+  const frontGroup = new THREE.Group();  // передня панель
+  const glassGroup = new THREE.Group();  // скляна бічна
+  const topGroup   = new THREE.Group();  // верхня панель + ручка
+  caseGroup.add(frontGroup, glassGroup, topGroup);
+
+  // ── Structural walls (steel shell) ──
+  // Top panel — у topGroup
+  addBox(topGroup, matBody.clone(), W, T, D - T*2, W/2, H - T/2, D/2);
+  // Bottom panel — залишається в caseGroup
+  bodyMeshes.push(addBox(caseGroup, matBody.clone(), W, T, D - T*2, W/2, T/2, D/2));
+
+  // Front face (лицева, перфорація) — у frontGroup
+  const matFront = new THREE.MeshStandardMaterial({
+    color: 0x131316, roughness: 0.7, metalness: 0.45,
+    map: makeMeshDotTexture(28, 38),
+    polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
+  });
+  bodyMeshes.push(addBox(frontGroup, matFront, W, H, T, W/2, H/2, D - T/2));
+
+  // Rear face — залишається в caseGroup
+  bodyMeshes.push(addBox(caseGroup, matBody.clone(), W, H, T, W/2, H/2, T/2));
+  // Right side wall — solid steel, в caseGroup
+  bodyMeshes.push(addBox(caseGroup, matBody.clone(), T, H, D, W - T/2, H/2, D/2));
+
+  // Left side wall — рама скла — у glassGroup
+  const GF = 15;
+  addBox(glassGroup, matGlassFrame.clone(), T, GF, D - GF*2, T/2, H - GF/2, D/2);
+  addBox(glassGroup, matGlassFrame.clone(), T, GF, D - GF*2, T/2, GF/2, D/2);
+  addBox(glassGroup, matGlassFrame.clone(), T, H, GF, T/2, H/2, GF/2);
+  addBox(glassGroup, matGlassFrame.clone(), T, H, GF, T/2, H/2, D - GF/2);
+
+  // ── Glass panel — у glassGroup ──
+  const glassW = D - GF * 2;
+  const glassH = H - GF * 2;
+  const glassMesh = new THREE.Mesh(new THREE.PlaneGeometry(glassW, glassH), matGlass);
   glassMesh.rotation.y = -Math.PI / 2;
   glassMesh.position.set(T/2 + 0.5, H/2, D/2);
   glassMesh.renderOrder = 2;
-  caseGroup.add(glassMesh);
+  glassGroup.add(glassMesh);
   bodyMeshes.push(glassMesh);
 
-  // Glass glare streak (diagonal light reflection)
+  // Glass glare — у glassGroup
   const glareMat = new THREE.MeshBasicMaterial({
     color: 0x5588aa, transparent: true, opacity: 0.08, depthWrite: false,
   });
@@ -200,11 +211,9 @@ function buildScene(threeRef) {
   glare.rotation.set(0, -Math.PI / 2, 0.3);
   glare.position.set(T/2 + 1, H * 0.55, D * 0.28);
   glare.renderOrder = 3;
-  caseGroup.add(glare);
+  glassGroup.add(glare);
 
   // ── Mesh (perforated) overlays ──
-  // Front face (Z=D) — full mesh
-  addPlane(caseGroup, makeMeshMat(5, 8), W - 2, H - 2, W/2, H/2, D - T + 0.5, 0, 0);
 
   // Right side — mesh strip top ~18% of height
   const meshStripH = H * 0.18;
@@ -219,29 +228,81 @@ function buildScene(threeRef) {
   addPlane(caseGroup, makeMeshMat(4.5, 5), W - 4, rearMeshH,
     W/2, H - rearMeshH/2 - T, T - 0.5, 0, Math.PI);
 
-  // Top panel — no mesh (solid), but add subtle dot texture for realism
-  addPlane(caseGroup, makeMeshMat(4, 8), W - 4, D - 4,
-    W/2, H - T + 0.5, D/2, -Math.PI/2, 0);
 
   // ── Handle ──
-  // Arch: two vertical legs + horizontal bar
-  // Legs: width=12, height=28, depth=12, positioned left and right of center
   const handleGroup = new THREE.Group();
-  caseGroup.add(handleGroup);
+  // Position group at top-center of case, rotated 90° so handle runs front-to-back (Z axis)
+  handleGroup.position.set(W / 2, H, D / 2);
+  handleGroup.rotation.y = Math.PI / 2;
+  topGroup.add(handleGroup);
 
-  const legW = 12, legH = 30, legD = 14;
-  const barW = W * 0.52, barH = 12, barD = 14;
-  const legOffset = W * 0.22; // distance from center to each leg
+  const matBracket = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9, roughness: 0.15 });
+  const matGrip    = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.1, roughness: 0.8 });
 
-  const handleLegL = addBox(handleGroup, matHandle.clone(), legW, legH, legD, W/2 - legOffset, H + legH/2 - 2, D/2);
-  const handleLegR = addBox(handleGroup, matHandle.clone(), legW, legH, legD, W/2 + legOffset, H + legH/2 - 2, D/2);
-  const handleBar  = addBox(handleGroup, matHandle.clone(), barW, barH, barD, W/2, H + legH + barH/2 - 2, D/2);
+  // Scale: handle spans ~120mm along Z (now X after rotation), depth ~20mm
+  const hSpan   = 120; // total span between bracket outer edges
+  const brkW    = 14;  // bracket width along span axis
+  const brkH    = 18;  // bracket height
+  const brkD    = 20;  // bracket depth (extrusion)
+  const innerOff = hSpan / 2 - brkW; // X position of inner edge of bracket
 
-  // Handle top cap (slightly lighter, like the silver strip on real handle)
-  const capMat = new THREE.MeshStandardMaterial({ color: 0x3a3a48, roughness: 0.3, metalness: 0.8 });
-  addBox(handleGroup, capMat, barW - 4, 4, barD - 4, W/2, H + legH + barH - 2, D/2);
+  // Bracket profile: trapezoid — flat bottom, vertical outer edge, angled inner edge
+  const makeBracketShape = () => {
+    const s = new THREE.Shape();
+    // outer-bottom → inner-bottom → inner-top(angled) → outer-top → back
+    s.moveTo(0, 0);
+    s.lineTo(brkW, 0);
+    s.lineTo(brkW * 0.4, brkH);
+    s.lineTo(0, brkH);
+    s.closePath();
+    return s;
+  };
 
-  const handleMeshes = [handleLegL, handleLegR, handleBar];
+  const extOpts = { depth: brkD, bevelEnabled: false };
+
+  // Left bracket (negative X side) — mirrored
+  const brkShapeL = makeBracketShape();
+  const brkGeoL   = new THREE.ExtrudeGeometry(brkShapeL, extOpts);
+  const brkMeshL  = new THREE.Mesh(brkGeoL, matBracket);
+  brkMeshL.position.set(-hSpan / 2, 0, -brkD / 2);
+  handleGroup.add(brkMeshL);
+
+  // Right bracket — mirror of left (scale X by -1)
+  const brkGeoR  = new THREE.ExtrudeGeometry(makeBracketShape(), extOpts);
+  const brkMeshR = new THREE.Mesh(brkGeoR, matBracket);
+  brkMeshR.scale.x = -1;
+  brkMeshR.position.set(hSpan / 2, 0, -brkD / 2);
+  handleGroup.add(brkMeshR);
+
+  // Grip — extruded trapezoidal cross-section along an arched CatmullRom curve
+  const gripLen  = hSpan - brkW * 0.5; // extended to touch brackets
+  const archH    = 7; // how high the arch rises in the middle
+  const numPts   = 20;
+  const curvePts = [];
+  for (let i = 0; i <= numPts; i++) {
+    const t  = i / numPts;
+    const x  = (t - 0.5) * gripLen;
+    const y  = brkH - 4 + Math.sin(t * Math.PI) * archH;
+    curvePts.push(new THREE.Vector3(x, y, 0));
+  }
+  const gripCurve = new THREE.CatmullRomCurve3(curvePts);
+
+  // Cross-section: trapezoid (wider bottom, narrower top)
+  const gripShape = new THREE.Shape();
+  const gW = brkD, gT = 9; // full width, thickness
+  gripShape.moveTo(-gW / 2, 0);
+  gripShape.lineTo( gW / 2, 0);
+  gripShape.lineTo( gW / 2 - 3, gT);
+  gripShape.lineTo(-gW / 2 + 3, gT);
+  gripShape.closePath();
+
+  const gripGeo  = new THREE.ExtrudeGeometry(gripShape, {
+    steps: numPts, bevelEnabled: false, extrudePath: gripCurve,
+  });
+  const gripMesh = new THREE.Mesh(gripGeo, matGrip);
+  handleGroup.add(gripMesh);
+
+  const handleMeshes = [brkMeshL, brkMeshR, gripMesh];
 
   // ── Rubber feet (4 corners) ──
   const footSize = 18, footH = 10;
@@ -257,54 +318,91 @@ function buildScene(threeRef) {
   const ioX  = W - 18;
   const ioZf = D - T/2 + 1;
   const gap  = 16; // spacing between elements
-  let   ioY  = H * 0.82; // start Y (top of stack)
+  let   ioY  = H * 0.35; // start Y (top of stack)
 
   // 1. Power button — round
   const pwrMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.3, metalness: 0.8 });
   const pwrBtn = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 5.5, 3, 24), pwrMat);
   pwrBtn.rotation.x = Math.PI / 2;
   pwrBtn.position.set(ioX, ioY, ioZf);
-  caseGroup.add(pwrBtn);
+  frontGroup.add(pwrBtn);
   bodyMeshes.push(pwrBtn);
   ioY -= gap;
 
-  // 2. USB-A 3.0 (blue, rotated 90° — tall port)
-  addBox(caseGroup, matUSBA.clone(), 8, 13, 3, ioX, ioY, ioZf);
+  // 2. USB-A 3.0 (blue, rotated 90°)
+  addBox(frontGroup, matUSBA.clone(), 8, 13, 3, ioX, ioY, ioZf);
   ioY -= gap;
 
   // 3. Mini-jack — cylinder with white/grey ring
   const jackBody = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 2.8, 3, 16), mat(0x0d0d10, 0.5));
   jackBody.rotation.x = Math.PI / 2;
   jackBody.position.set(ioX, ioY, ioZf);
-  caseGroup.add(jackBody);
+  frontGroup.add(jackBody);
   const jackRing = new THREE.Mesh(
     new THREE.TorusGeometry(3.6, 0.9, 8, 20),
     new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.4, metalness: 0.6 })
   );
-  jackRing.rotation.x = Math.PI / 2;
   jackRing.position.set(ioX, ioY, ioZf + 0.5);
-  caseGroup.add(jackRing);
+  frontGroup.add(jackRing);
   ioY -= gap;
 
-  // 4. USB-C (rotated 90° like USB-A but smaller, grey)
+  // 4. USB-C (rotated 90°, grey)
   const matUSBC = mat(0x444450, 0.3, 0.5);
-  addBox(caseGroup, matUSBC, 6, 10, 3, ioX, ioY, ioZf);
+  addBox(frontGroup, matUSBC, 6, 10, 3, ioX, ioY, ioZf);
 
-  // HDD LED (tiny red dot, above power button)
-  const hddLed = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 2, 12), matLED);
-  hddLed.rotation.x = Math.PI / 2;
-  hddLed.position.set(ioX - 10, H * 0.82, ioZf);
-  caseGroup.add(hddLed);
+  // no HDD LED
+  const hddLed = null;
 
-  // ── Rear panel details ──
-  // 4 expansion slots (bottom-right of rear = Z=0 side)
-  [0,1,2,3].forEach(i => addBox(caseGroup, matSlot.clone(), W * 0.5, 14, T, W * 0.72, 42 + i*18, T/2));
+  // ── Rear panel details (Z=0 face) ──
+  const rZ = T / 2; // rear face Z center
 
-  // PSU cutout area (top-left of rear)
-  const psuMat = mat(0x0c0c0f, 0.8, 0.3);
-  addBox(caseGroup, psuMat, W * 0.42, H * 0.28, T, W * 0.24, H * 0.78, T/2);
-  // PSU connector hole
-  addBox(caseGroup, mat(0x080809, 0.9), 22, 22, T, W * 0.1, H * 0.88, T/2);
+  // 1. Motherboard I/O cutout — large dark rectangle, left side, upper area
+  const mioW = W * 0.42, mioH = H * 0.32;
+  addBox(caseGroup, mat(0x080809, 0.95, 0.1), mioW, mioH, T + 1,
+    W * 0.26, H * 0.68, rZ);
+
+  // 2. Fan/ventilation grille — top-right area (large mesh zone)
+  const grillW = W * 0.48, grillH = H * 0.44;
+  const matGrill = new THREE.MeshStandardMaterial({
+    color: 0x0e0e11, roughness: 0.7, metalness: 0.3,
+    map: makeMeshDotTexture(10, 10),
+  });
+  addBox(caseGroup, matGrill, grillW, grillH, T + 0.5,
+    W * 0.73, H * 0.72, rZ);
+
+  // 3. PSU power connector (trapezoid-ish, top center)
+  addBox(caseGroup, mat(0x0a0a0c, 0.9, 0.2), 28, 20, T + 1, W * 0.5, H * 0.93, rZ);
+  // connector pins detail
+  addBox(caseGroup, mat(0x1a1a22, 0.5, 0.4), 22, 14, T + 2, W * 0.5, H * 0.93, rZ);
+
+  // 4. Four expansion slots — bottom right (for GPU etc)
+  const slotW = W * 0.52, slotH = 13, slotGap = 17;
+  [0,1,2,3].forEach(i => {
+    // slot frame
+    addBox(caseGroup, mat(0x1c1c22, 0.6, 0.4), slotW, slotH, T + 0.5,
+      W * 0.72, 30 + i * slotGap, rZ);
+    // slot mesh texture strip
+    const slotMeshMat = new THREE.MeshStandardMaterial({
+      color: 0x141418, roughness: 0.8, metalness: 0.2,
+      map: makeMeshDotTexture(8, 1),
+    });
+    addBox(caseGroup, slotMeshMat, slotW - 6, slotH - 4, T + 1,
+      W * 0.72, 30 + i * slotGap, rZ);
+  });
+
+  // 5. USB/charging port area — bottom right corner (small vertical strip)
+  addBox(caseGroup, mat(0x111114, 0.5, 0.4), 14, 40, T + 1, W * 0.92, 30, rZ);
+  // USB port inside
+  addBox(caseGroup, matUSBA.clone(), 8, 6, T + 2, W * 0.92, 28, rZ);
+
+  // 6. Screw holes — 4 corners of rear panel
+  const screwMat = mat(0x2a2a32, 0.3, 0.8);
+  [[W*0.08, H*0.95], [W*0.92, H*0.95], [W*0.08, H*0.05], [W*0.92, H*0.05]].forEach(([x, y]) => {
+    const screw = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.5, T + 1, 8), screwMat);
+    screw.rotation.x = Math.PI / 2;
+    screw.position.set(x, y, rZ);
+    caseGroup.add(screw);
+  });
 
   // ── Floor glow ──
   const floorGlow = new THREE.Mesh(
@@ -320,19 +418,25 @@ function buildScene(threeRef) {
   threeRef.current = {
     ...threeRef.current,
     scene, camera, renderer, spotLight, bodyMeshes, handleMeshes, hddLed,
+    frontGroup, glassGroup, topGroup,
+    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP,
   };
-  return { scene, camera, renderer, spotLight, bodyMeshes, handleMeshes, hddLed };
+  return { scene, camera, renderer, spotLight, bodyMeshes, handleMeshes, hddLed,
+    frontGroup, glassGroup, topGroup,
+    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP };
 }
 
 // ── Component ────────────────────────────────────────────────────────
 
 function PCBuild() {
-  const mountRef = useRef(null);
-  const threeRef = useRef({});
-  const hoverRef = useRef(false);
+  const mountRef   = useRef(null);
+  const threeRef   = useRef({});
+  const hoverRef   = useRef(false);
+  const explodeRef = useRef(0); // 0 = closed, 1 = open
 
   const [handlePinned, setHandlePinned] = useState(false);
   const [handleHover,  setHandleHover]  = useState(false);
+  const [exploded,     setExploded]     = useState(false);
   const handleActive = handleHover || handlePinned;
 
   const caseData = window.BUILD_DATA?.parts?.find(p => p.id === 'case');
@@ -358,7 +462,10 @@ function PCBuild() {
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 0, 0);
-    controls.enableZoom   = false;
+    controls.enableZoom   = true;
+    controls.zoomSpeed    = 0.8;
+    controls.minDistance  = 250;
+    controls.maxDistance  = 1400;
     controls.enablePan    = false;
     controls.rotateSpeed  = 0.65;
     controls.enableDamping = true;
@@ -435,6 +542,17 @@ function PCBuild() {
       animId = requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
       if (hddLed) hddLed.material.emissiveIntensity = Math.sin(t * 2.4) * 0.38 + 0.55;
+
+      // Плавна анімація розкриття (lerp до target)
+      const target = explodeRef.current;
+      const { frontGroup, glassGroup, topGroup,
+              EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP } = threeRef.current;
+      if (frontGroup && glassGroup && topGroup) {
+        frontGroup.position.z += (target * EXPLODE_FRONT - frontGroup.position.z) * 0.08;
+        glassGroup.position.x += (target * (-EXPLODE_GLASS) - glassGroup.position.x) * 0.08;
+        topGroup.position.y   += (target * EXPLODE_TOP   - topGroup.position.y)   * 0.08;
+      }
+
       controls.update();
       renderer.render(scene, camera);
     };
@@ -463,9 +581,15 @@ function PCBuild() {
   const resetCamera = () => {
     const { camera, controls } = threeRef.current;
     if (!camera || !controls) return;
-    camera.position.set(-380, 260, 560);
+    camera.position.set(-300, 220, 700);
     controls.target.set(0, 0, 0);
     controls.update();
+  };
+
+  const toggleExplode = () => {
+    const next = !exploded;
+    setExploded(next);
+    explodeRef.current = next ? 1 : 0;
   };
 
   return (
@@ -491,6 +615,9 @@ function PCBuild() {
             </div>
             <div className="build-controls">
               <button onClick={resetCamera}>↺ Reset</button>
+              <button onClick={toggleExplode} style={{ marginLeft: 8 }}>
+                {exploded ? '⬛ Закрити' : '⬜ Розкрити'}
+              </button>
             </div>
             <div className="build-rotate-hint">
               <span className="key">DRAG</span> обертати · 360°
