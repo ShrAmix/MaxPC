@@ -158,7 +158,7 @@ function buildScene(threeRef) {
   // ── Explode groups (для анімації розкриття) ──
   // ── НАЛАШТУВАННЯ ЗМІЩЕННЯ ──────────────────
   const EXPLODE_FRONT = 160;   // передня панель — вперед (по Z)
-  const EXPLODE_GLASS = 140;   // скляна бічна   — вліво  (по X)
+  const EXPLODE_GLASS = 260;   // скляна бічна   — вліво  (по X)
   const EXPLODE_TOP   = 120;   // верхня + ручка — вгору  (по Y)
   // ────────────────────────────────────────────
 
@@ -404,6 +404,423 @@ function buildScene(threeRef) {
     caseGroup.add(screw);
   });
 
+  // ── Motherboard: Gigabyte B550M Aorus Elite ──
+  // Плата стоїть вертикально паралельно правій стінці
+  // Вид через скло (з лівого боку):
+  //   Z↑ = "вліво" на фото (задній край корпусу = Z мале)
+  //   Y↑ = "вгору" на фото
+  // mb(mat, protrude, h, d, oy, oz):
+  //   oy = відступ від НИЗУ плати по Y
+  //   oz = відступ від ЗАДНЬОГО краю плати по Z
+  //   Тому: oz=0 → задній край (лівий на фото), oz=MB → передній (правий на фото)
+  //         oy=0 → низ плати,                   oy=MB → верх
+  // ── Motherboard: Gigabyte B550M Aorus Elite (mATX 244×244mm) ──
+  // ── НАЛАШТУВАННЯ ЗМІЩЕННЯ МАТЕРИНКИ ──
+  const EXPLODE_MOBO = 120; // вліво (до скла) при розкритті
+
+  const moboGroup = new THREE.Group();
+  caseGroup.add(moboGroup);
+
+  const MB  = 220;        // розмір плати (мм)
+  const mpX = W - T - 4;  // X поверхні PCB
+  const mpY = 20;         // нижній край плати
+  const mpZ = T + 12;     // задній край плати
+
+  const ms = (color, r = 0.5, m = 0.7) =>
+    new THREE.MeshStandardMaterial({ color, roughness: r, metalness: m, emissive: 0x000000, emissiveIntensity: 0 });
+
+  // mb: box helper (кубічні елементи)
+  const mb = (mat, protrude, h, d, oy, oz) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(protrude, h, d), mat);
+    mesh.position.set(mpX - protrude / 2, mpY + oy + h / 2, mpZ + oz + d / 2);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    moboGroup.add(mesh);
+    return mesh;
+  };
+
+  // mc: cylinder helper (для круглих елементів: конденсаторів, батарейки)
+  const mc = (mat, r, h, oy, oz) => {
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 16), mat);
+    mesh.rotation.z = Math.PI / 2; // розвертаємо вздовж осі X, щоб стирчали від плати
+    mesh.position.set(mpX - h / 2, mpY + oy, mpZ + oz);
+    mesh.castShadow = true;
+    moboGroup.add(mesh);
+    return mesh;
+  };
+
+  // ══ PCB ══
+  // Темно-сіра основа (майже чорна, як у Aorus)
+  mb(ms(0x18181b, 0.85, 0.1), 3, MB, MB, 0, 0);
+
+  // Декоративні діагональні лінії на платі (біло-сірі смуги)
+  const decorMat = ms(0x5a5a65, 0.8, 0.2);
+  const decor1 = new THREE.Mesh(new THREE.PlaneGeometry(160, 8), decorMat);
+  decor1.rotation.set(0, -Math.PI / 2, Math.PI / 4.5);
+  decor1.position.set(mpX - 1.6, mpY + 100, mpZ + 110);
+  moboGroup.add(decor1);
+
+  const decor2 = new THREE.Mesh(new THREE.PlaneGeometry(100, 4), decorMat);
+  decor2.rotation.set(0, -Math.PI / 2, Math.PI / 4.5);
+  decor2.position.set(mpX - 1.6, mpY + 120, mpZ + 120);
+  moboGroup.add(decor2);
+
+  // ══ МАСИВНИЙ VRM РАДІАТОР + I/O КОЖУХ (лівий верхній кут) ══
+  // Основний кожух I/O (великий темний блок)
+  mb(ms(0x141417, 0.4, 0.5), 28, 110, 50, 110, 0);
+  // Помаранчева фірмова лінія Aorus
+  mb(ms(0xe65c00, 0.4, 0.6), 29, 45, 3, 130, 45);
+  // Верхній радіатор VRM (над сокетом)
+  mb(ms(0x222225, 0.3, 0.7), 22, 30, 80, 190, 40);
+
+  // ══ CPU СОКЕТ AM4 (центр верх) ══
+  mb(ms(0x282828, 0.6, 0.2), 5, 54, 54, 126, 68); // Пластик сокету
+  mb(ms(0xaaaaaa, 0.4, 0.8), 6, 40, 40, 133, 75); // Кришка процесора (встановлений CPU)
+  mb(ms(0xcccccc, 0.3, 0.9), 7,  2, 58, 124, 66); // Металева лапка фіксатора
+
+  // ══ DDR4 СЛОТИ (4 шт, праворуч) ══
+  for (let i = 0; i < 4; i++) {
+    mb(ms(0x111111, 0.5, 0.4), 8, 95, 7, 105, 140 + i * 14);
+    // Защіпки слотів (сірі)
+    mb(ms(0x444444, 0.4, 0.5), 8,  6, 7, 200, 140 + i * 14);
+    mb(ms(0x444444, 0.4, 0.5), 8,  6, 7,  99, 140 + i * 14);
+  }
+
+  // ══ 24-PIN ATX ЖИВЛЕННЯ (правий край) ══
+  mb(ms(0x0a0a0a, 0.6, 0.2), 14, 45, 12, 130, 202);
+  // 8-PIN CPU ЖИВЛЕННЯ (верхній лівий кут)
+  mb(ms(0x0a0a0a, 0.6, 0.2), 12, 16, 22, 200, 60);
+
+  // ══ PCIe x16 СЛОТ #1 — АРМОВАНИЙ (срібний) ══
+  mb(ms(0xaaaaaa, 0.2, 0.9),  9, 14, 116, 85, 15); // Металевий екран
+  mb(ms(0x0a0a0a, 0.5, 0.4), 10, 10, 112, 87, 17); // Сам чорний слот всередині
+
+  // ══ PCIe x1 СЛОТ (короткий) ══
+  mb(ms(0x111111, 0.5, 0.4), 8, 10, 30, 65, 15);
+
+  // ══ PCIe x16 СЛОТ #2 (нижній, чорний) ══
+  mb(ms(0x111111, 0.5, 0.4), 8, 14, 116, 40, 15);
+
+  // ══ M.2 СЛОТИ (над і під основним PCIe) ══
+  mb(ms(0x1f1f1f, 0.6, 0.3), 4, 18, 75, 105, 30); // M.2 над GPU
+  mb(ms(0xd0d0d0, 0.4, 0.9), 5,  4,  4, 112, 101); // Гвинт M.2
+
+  mb(ms(0x1f1f1f, 0.6, 0.3), 4, 18, 75,  60, 30); // M.2 під GPU
+  mb(ms(0xd0d0d0, 0.4, 0.9), 5,  4,  4,  67, 101); // Гвинт M.2
+
+  // ══ ЧІПСЕТ B550 (правий нижній кут) ══
+  // Темний квадратний радіатор
+  mb(ms(0x18181a, 0.4, 0.6), 10, 48, 48, 25, 135);
+  // Металева декоративна пластина з логотипом (імітація)
+  mb(ms(0x2a2a2e, 0.3, 0.8), 11, 35, 35, 30, 142);
+
+  // ══ CMOS БАТАРЕЙКА (кругла, блискуча) ══
+  // Знаходиться трохи вище нижнього PCIe слоту
+  mc(ms(0xd4d4d4, 0.3, 0.95), 8, 3, 56, 115);
+
+  // ══ АУДІО КОНДЕНСАТОРИ (золоті циліндри, лівий нижній кут) ══
+  const goldMat = ms(0xc9a418, 0.3, 0.8);
+  mc(goldMat, 2.5, 7, 28, 15);
+  mc(goldMat, 2.5, 7, 18, 15);
+  mc(goldMat, 2.5, 7, 28, 25);
+  mc(goldMat, 2.5, 7, 18, 25);
+  // Розділова лінія аудіотракту (підсвічується червоним/жовтим на платі)
+  mb(ms(0xccaa00, 0.2, 0.2), 3.5, 40, 2, 5, 32);
+
+  // ══ SATA ПОРТИ (нижній правий край) ══
+  mb(ms(0x1a1a1a, 0.5, 0.3), 8, 12, 18, 10, 190);
+  mb(ms(0x1a1a1a, 0.5, 0.3), 8, 12, 18, 10, 165);
+
+  // ══ I/O ПАНЕЛЬ (роз'єми на задній стінці) ══
+  mb(ms(0x0a0a0a, 0.5, 0.2), 12, 35, 72, 110, -5); // заглушка портів всередині кожуха
+
+  // ── CPU: AMD Ryzen 5 5600 ──
+  // Сидить на сокеті AM4: oy=126, oz=68, розмір 40×40мм (трохи менше сокету 54×54)
+  const cpuGroup = new THREE.Group();
+  caseGroup.add(cpuGroup);
+
+  // ── НАЛАШТУВАННЯ ЗМІЩЕННЯ CPU ──
+  const EXPLODE_CPU = 180; // вліво більше ніж материнка (щоб бути перед нею)
+
+  const cpuOY = 126 + 7;  // центр по Y (oy сокету + зсув до центру)
+  const cpuOZ = 68 + 7;   // центр по Z
+  const cpuS  = 40;        // розмір IHS (мм)
+  const cpuPCBExtra = 4;   // PCB виступає за IHS з кожного боку
+
+  // Позиція центру CPU на платі
+  const cpuX = mpX - 6;
+  const cpuY = mpY + cpuOY + cpuS / 2;
+  const cpuZ = mpZ + cpuOZ + cpuS / 2;
+
+  // PCB підложка (зеленувато-золота, виступає за IHS)
+  const cpuPCB = new THREE.Mesh(
+    new THREE.BoxGeometry(3, cpuS + cpuPCBExtra*2, cpuS + cpuPCBExtra*2),
+    new THREE.MeshStandardMaterial({ color: 0x2a3a10, roughness: 0.6, metalness: 0.3, emissive: 0x000000 })
+  );
+  cpuPCB.position.set(cpuX - 1.5, cpuY, cpuZ);
+  cpuGroup.add(cpuPCB);
+
+  // Контакти (золоті точки по периметру)
+  const matContact = new THREE.MeshStandardMaterial({ color: 0xb8860b, roughness: 0.2, metalness: 0.9, emissive: 0x000000 });
+  const contactRows = 8;
+  for (let i = 0; i < contactRows; i++) {
+    for (let side = 0; side < 4; side++) {
+      const t = (i / (contactRows - 1)) - 0.5;
+      const hs = (cpuS + cpuPCBExtra * 2) / 2;
+      let cy2, cz2;
+      if (side === 0) { cy2 = cpuY - hs + 2; cz2 = cpuZ + t * (cpuS + 4); }
+      else if (side === 1) { cy2 = cpuY + hs - 2; cz2 = cpuZ + t * (cpuS + 4); }
+      else if (side === 2) { cy2 = cpuY + t * (cpuS + 4); cz2 = cpuZ - hs + 2; }
+      else { cy2 = cpuY + t * (cpuS + 4); cz2 = cpuZ + hs - 2; }
+      const dot = new THREE.Mesh(new THREE.BoxGeometry(2, 1.5, 1.5), matContact);
+      dot.position.set(cpuX - 0.5, cy2, cz2);
+      cpuGroup.add(dot);
+    }
+  }
+
+  // IHS (сріблястий металевий щит зверху)
+  const ihsMat = new THREE.MeshStandardMaterial({
+    color: 0xb0b0b8, roughness: 0.18, metalness: 0.92, emissive: 0x000000,
+  });
+  const ihs = new THREE.Mesh(new THREE.BoxGeometry(8, cpuS, cpuS), ihsMat);
+  ihs.position.set(cpuX - 5, cpuY, cpuZ);
+  cpuGroup.add(ihs);
+
+  // Фаски IHS (скошені краї — 4 тонкі смужки по периметру)
+  const bevelMat = new THREE.MeshStandardMaterial({ color: 0x888898, roughness: 0.25, metalness: 0.88, emissive: 0x000000 });
+  const bW = 3;
+  [[0, cpuS/2 - bW/2], [0, -cpuS/2 + bW/2]].forEach(([dy, dz]) => {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(8, bW, bW), bevelMat);
+    b.position.set(cpuX - 5, cpuY + dy, cpuZ + dz * Math.sign(dz));
+    cpuGroup.add(b);
+  });
+
+  // Напис "AMD RYZEN" через CanvasTexture
+  const labelCanvas = document.createElement('canvas');
+  labelCanvas.width = 256; labelCanvas.height = 256;
+  const lctx = labelCanvas.getContext('2d');
+  lctx.fillStyle = '#b0b0b8';
+  lctx.fillRect(0, 0, 256, 256);
+  lctx.fillStyle = '#1a1a1a';
+  lctx.font = 'bold 28px Arial';
+  lctx.textAlign = 'center';
+  lctx.fillText('AMD', 128, 90);
+  lctx.font = 'bold 48px Arial';
+  lctx.fillText('RYZEN', 128, 148);
+  lctx.font = '20px Arial';
+  lctx.fillText('5  5600', 128, 185);
+
+  const labelTex = new THREE.CanvasTexture(labelCanvas);
+  const labelMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(cpuS - 4, cpuS - 4),
+    new THREE.MeshStandardMaterial({ map: labelTex, roughness: 0.2, metalness: 0.5, emissive: 0x000000 })
+  );
+  labelMesh.rotation.y = -Math.PI / 2;
+  labelMesh.position.set(cpuX - 9.1, cpuY, cpuZ);
+  cpuGroup.add(labelMesh);
+
+  // ── Термопрокладка Honeywell PTM7950 (окрема група, виїжджає далі за CPU) ──
+  const EXPLODE_TIM = 260;
+  const timGroup = new THREE.Group();
+  caseGroup.add(timGroup);
+
+  const timMat = new THREE.MeshStandardMaterial({
+    color: 0x68686e, roughness: 0.9, metalness: 0.05,
+    emissive: new THREE.Color(0x000000), emissiveIntensity: 0,
+  });
+  const timMesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, cpuS * 0.72, cpuS * 0.72), timMat);
+  timMesh.position.set(cpuX - 9.5, cpuY, cpuZ);
+  timGroup.add(timMesh);
+
+// ── Cooler: ID-COOLING Frozn A410 DK Black ──
+  const EXPLODE_COOLER = 320;
+  const coolerGroup = new THREE.Group();
+  caseGroup.add(coolerGroup);
+
+  // Правильні розміри відносно осей корпусу
+  // Материнка в площині YZ. Кулер "росте" від неї вліво (вздовж -X).
+  const towerThickZ = 50;  // Товщина радіатора (вісь Z) - куди кріпляться вентилятори
+  const towerWidthY = 120; // Ширина радіатора (вісь Y)
+  const finStackX   = 100; // Висота самих ребер (довжина вздовж осі X)
+  
+  // Центр башти кулера
+  const clX = cpuX - 45 - finStackX / 2; // Відступ від CPU (трубки) + половина радіатора
+  const clY = cpuY + 5;
+  const clZ = cpuZ;
+
+  const mc2 = (mat, r, h, px, py, pz, rx = 0, ry = 0, rz = 0) => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 24), mat);
+    m.rotation.set(rx, ry, rz);
+    m.position.set(px, py, pz);
+    m.castShadow = true; m.receiveShadow = true;
+    coolerGroup.add(m);
+    return m;
+  };
+  const cb = (mat, w, h, d, px, py, pz) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(px, py, pz);
+    m.castShadow = true; m.receiveShadow = true;
+    coolerGroup.add(m);
+    return m;
+  };
+
+  const matFin     = new THREE.MeshStandardMaterial({ color: 0x16161a, roughness: 0.35, metalness: 0.8, emissive: 0x000000 });
+  const matTube    = new THREE.MeshStandardMaterial({ color: 0x0a0a0c, roughness: 0.2, metalness: 0.9, emissive: 0x000000 });
+  const matFanBody = new THREE.MeshStandardMaterial({ color: 0x121214, roughness: 0.6, metalness: 0.3, emissive: 0x000000 });
+  const matBlade   = new THREE.MeshStandardMaterial({ color: 0x1a1a1f, roughness: 0.4, metalness: 0.4, emissive: 0x000000 });
+  const matTopCover= new THREE.MeshStandardMaterial({ color: 0x0f0f12, roughness: 0.5, metalness: 0.6, emissive: 0x000000 });
+
+  // ── Підошва та трубки ──
+  cb(new THREE.MeshStandardMaterial({ color: 0x222225, roughness: 0.3, metalness: 0.8 }), 12, 36, 36, cpuX - 6, cpuY, cpuZ);
+  cb(matTube, 16, 40, 40, cpuX - 20, cpuY, cpuZ);
+
+  const tubeOffsets = [-15, -5, 5, 15];
+  tubeOffsets.forEach(oz => {
+    // Горизонтальні трубки, що йдуть крізь ребра (вздовж X)
+    mc2(matTube, 3.5, finStackX + 35, clX + 10, clY + 20, clZ + oz, 0, 0, Math.PI/2);
+    mc2(matTube, 3.5, finStackX + 35, clX + 10, clY - 20, clZ + oz, 0, 0, Math.PI/2);
+    // Вертикальні трубки біля процесора
+    mc2(matTube, 3.5, 40, cpuX - 20, clY, clZ + oz, 0, 0, 0);
+  });
+
+  // ── Башта (Радіатор) ──
+  const finShape = new THREE.Shape();
+  const hz = towerThickZ / 2; 
+  const hy = towerWidthY / 2; 
+  const chamfer = 6;
+  const indent = 4;
+  
+  // Малюємо профіль радіатора
+  finShape.moveTo(-hz, -hy + chamfer);
+  finShape.lineTo(-hz + chamfer, -hy);
+  finShape.lineTo(hz - chamfer, -hy);
+  finShape.lineTo(hz, -hy + chamfer);
+  // Виїмка для кліпс
+  finShape.lineTo(hz, -20); finShape.lineTo(hz - indent, -10); finShape.lineTo(hz - indent, 10); finShape.lineTo(hz, 20); 
+  finShape.lineTo(hz, hy - chamfer);
+  finShape.lineTo(hz - chamfer, hy);
+  finShape.lineTo(-hz + chamfer, hy);
+  finShape.lineTo(-hz, hy - chamfer);
+  // Друга виїмка
+  finShape.lineTo(-hz, 20); finShape.lineTo(-hz + indent, 10); finShape.lineTo(-hz + indent, -10); finShape.lineTo(-hz, -20); 
+  finShape.closePath();
+
+  // Текстура для імітації багатьох ребер
+  const finCanvas = document.createElement('canvas');
+  finCanvas.width = 8; finCanvas.height = 64;
+  const fctx = finCanvas.getContext('2d');
+  fctx.fillStyle = '#16161a'; fctx.fillRect(0,0,8,64);
+  fctx.fillStyle = '#08080a'; for(let i=0; i<64; i+=4) fctx.fillRect(0,i,8,2);
+  const finTex = new THREE.CanvasTexture(finCanvas);
+  finTex.wrapS = finTex.wrapT = THREE.RepeatWrapping;
+  finTex.repeat.set(1, finStackX / 2);
+
+  const towerMat = new THREE.MeshStandardMaterial({ color: 0x16161a, roughness: 0.5, metalness: 0.6, emissive: 0x000000, map: finTex });
+  const mainTower = new THREE.Mesh(new THREE.ExtrudeGeometry(finShape, { depth: finStackX, bevelEnabled: false }), towerMat);
+  
+  // Розвертаємо радіатор так, щоб він ріс від процесора (-X)
+  mainTower.rotation.y = -Math.PI / 2; 
+  mainTower.position.set(clX + finStackX / 2, clY, clZ);
+  mainTower.castShadow = true; mainTower.receiveShadow = true;
+  coolerGroup.add(mainTower);
+
+  // ── Верхня декоративна кришка ──
+  const coverH = 8;
+  const topCover = new THREE.Mesh(new THREE.ExtrudeGeometry(finShape, { depth: coverH, bevelEnabled: true, bevelSize: 1, bevelThickness: 1 }), matTopCover);
+  topCover.rotation.y = -Math.PI / 2;
+  topCover.position.set(clX - finStackX / 2, clY, clZ); // Ближче до скла
+  topCover.castShadow = true;
+  coolerGroup.add(topCover);
+
+  // Глянцева вставка з діагоналями
+  const decorShape = new THREE.Shape();
+  const dW = hz - 2, dD = hy - 15;
+  decorShape.moveTo(-dW, -dD); decorShape.lineTo(dW, -dD); decorShape.lineTo(dW, dD); decorShape.lineTo(-dW, dD); decorShape.closePath();
+  const topDecor = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(decorShape, { depth: 0.5, bevelEnabled: false }), 
+    new THREE.MeshStandardMaterial({ color: 0x050508, roughness: 0.1, metalness: 0.9 })
+  );
+  topDecor.rotation.y = -Math.PI / 2;
+  topDecor.position.set(clX - finStackX / 2 - coverH, clY, clZ);
+  coolerGroup.add(topDecor);
+
+  const stripeMat = new THREE.MeshBasicMaterial({ color: 0x888899 });
+  for(let i=0; i<4; i++){
+    const stripe = new THREE.Mesh(new THREE.PlaneGeometry(30, 2), stripeMat);
+    stripe.rotation.y = -Math.PI / 2;
+    stripe.rotation.x = -Math.PI / 4; 
+    stripe.position.set(clX - finStackX / 2 - coverH - 0.6, clY + 20 - i*8, clZ);
+    coolerGroup.add(stripe);
+  }
+
+  // ── Вентилятори (120мм, спереду і ззаду) ──
+  const fanSize = 120;
+  const fanDepth = 25;
+  
+  [-1, 1].forEach(side => {
+    // side = -1 (задній вентилятор), 1 (передній)
+    const fZ = clZ + side * (towerThickZ / 2 + fanDepth / 2 + 1); 
+    
+    // Рамка вентилятора
+    const fFrameShape = new THREE.Shape();
+    const hs = fanSize / 2;
+    const cr = 12; 
+    fFrameShape.moveTo(-hs+cr, -hs); fFrameShape.lineTo(hs-cr, -hs); fFrameShape.lineTo(hs, -hs+cr);
+    fFrameShape.lineTo(hs, hs-cr); fFrameShape.lineTo(hs-cr, hs); fFrameShape.lineTo(-hs+cr, hs);
+    fFrameShape.lineTo(-hs, hs-cr); fFrameShape.lineTo(-hs, -hs+cr); fFrameShape.closePath();
+    
+    const hole = new THREE.Path();
+    hole.absarc(0, 0, fanSize/2 - 4, 0, Math.PI * 2, false);
+    fFrameShape.holes.push(hole);
+
+    const fFrame = new THREE.Mesh(new THREE.ExtrudeGeometry(fFrameShape, { depth: fanDepth, bevelEnabled: true, bevelSize: 1, bevelThickness: 1 }), matFanBody);
+    fFrame.position.set(clX, clY, fZ - fanDepth/2); // Рамка малюється прямо у площині XY
+    fFrame.castShadow = true;
+    coolerGroup.add(fFrame);
+
+    // Хаб
+    mc2(new THREE.MeshStandardMaterial({ color: 0x111114, roughness: 0.4 }), 24, fanDepth - 2, clX, clY, fZ, Math.PI/2, 0, 0);
+    mc2(new THREE.MeshStandardMaterial({ color: 0x222225, roughness: 0.6 }), 18, fanDepth + 0.5, clX, clY, fZ, Math.PI/2, 0, 0);
+
+    // 9 Лопатей
+    for (let b = 0; b < 9; b++) {
+      const angle = (b / 9) * Math.PI * 2;
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(34, 2, fanDepth - 4), matBlade);
+      
+      const br = 42; 
+      const bx = clX + Math.cos(angle) * br;
+      const by = clY + Math.sin(angle) * br;
+      
+      blade.position.set(bx, by, fZ);
+      blade.rotation.order = 'ZYX';
+      blade.rotation.z = angle; // Радіальний напрямок
+      blade.rotation.x = Math.PI / 4 * side; // Кут нахилу лопаті 
+      blade.castShadow = true;
+      coolerGroup.add(blade);
+    }
+
+    // Гумові куточки
+    const padMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.9 });
+    [[-1,-1], [1,-1], [1,1], [-1,1]].forEach(([sx, sy]) => {
+      const pad = new THREE.Mesh(new THREE.BoxGeometry(18, 18, fanDepth+2), padMat);
+      pad.position.set(clX + sx * (hs - 8), clY + sy * (hs - 8), fZ);
+      coolerGroup.add(pad);
+    });
+    
+    // Візуалізація металевих скоб (лініями)
+    const clipMat = new THREE.LineBasicMaterial({ color: 0x222222, linewidth: 2 });
+    [1, -1].forEach(sy => {
+      [1, -1].forEach(sx => {
+        const pts = [];
+        pts.push(new THREE.Vector3(clX + sx*(hs-4), clY + sy*(hs-4), fZ - side*fanDepth/2));
+        pts.push(new THREE.Vector3(clX + sx*(hs+2), clY + sy*(hs-20), fZ - side*fanDepth/2 - side*5));
+        pts.push(new THREE.Vector3(clX + sx*(hs+2), clY + sy*10, clZ + side*20)); 
+        const clip = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), clipMat);
+        coolerGroup.add(clip);
+      });
+    });
+  });
+
   // ── Floor glow ──
   const floorGlow = new THREE.Mesh(
     new THREE.PlaneGeometry(580, 400),
@@ -418,12 +835,12 @@ function buildScene(threeRef) {
   threeRef.current = {
     ...threeRef.current,
     scene, camera, renderer, spotLight, bodyMeshes, handleMeshes, hddLed,
-    frontGroup, glassGroup, topGroup,
-    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP,
+    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup,
+    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER,
   };
   return { scene, camera, renderer, spotLight, bodyMeshes, handleMeshes, hddLed,
-    frontGroup, glassGroup, topGroup,
-    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP };
+    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup,
+    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER };
 }
 
 // ── Component ────────────────────────────────────────────────────────
@@ -437,9 +854,27 @@ function PCBuild() {
   const [handlePinned, setHandlePinned] = useState(false);
   const [handleHover,  setHandleHover]  = useState(false);
   const [exploded,     setExploded]     = useState(false);
+  const [moboPinned,   setMoboPinned]   = useState(false);
+  const [moboHover,    setMoboHover]    = useState(false);
+  const [cpuPinned,    setCpuPinned]    = useState(false);
+  const [cpuHover,     setCpuHover]     = useState(false);
+  const [timPinned,    setTimPinned]    = useState(false);
+  const [timHover,     setTimHover]     = useState(false);
+  const [coolerPinned, setCoolerPinned] = useState(false);
+  const [coolerHover,  setCoolerHover]  = useState(false);
   const handleActive = handleHover || handlePinned;
+  const moboActive   = moboHover   || moboPinned;
+  const cpuActive    = cpuHover    || cpuPinned;
+  const timActive    = timHover    || timPinned;
+  const coolerActive = coolerHover || coolerPinned;
 
-  const caseData = window.BUILD_DATA?.parts?.find(p => p.id === 'case');
+  const activePanel = coolerActive ? 'cooler' : timActive ? 'tim' : cpuActive ? 'cpu' : moboActive ? 'mobo' : handleActive ? 'case' : null;
+
+  const caseData   = window.BUILD_DATA?.parts?.find(p => p.id === 'case');
+  const moboData   = window.BUILD_DATA?.parts?.find(p => p.id === 'mobo');
+  const cpuData    = window.BUILD_DATA?.parts?.find(p => p.id === 'cpu');
+  const timData    = window.BUILD_DATA?.parts?.find(p => p.id === 'tim');
+  const coolerData = window.BUILD_DATA?.parts?.find(p => p.id === 'cooler');
 
   // Sync handle emissive
   useEffect(() => {
@@ -450,6 +885,50 @@ function PCBuild() {
       m.material.emissiveIntensity = handleActive ? 0.55 : 0;
     });
   }, [handleActive]);
+
+  // Sync cooler emissive
+  useEffect(() => {
+    const { coolerGroup } = threeRef.current;
+    if (!coolerGroup) return;
+    coolerGroup.traverse(m => {
+      if (!m.isMesh || !m.material) return;
+      m.material.emissive = new THREE.Color(coolerActive ? 0x0033cc : 0x000000);
+      m.material.emissiveIntensity = coolerActive ? 0.35 : 0;
+    });
+  }, [coolerActive]);
+
+  // Sync tim emissive
+  useEffect(() => {
+    const { timMesh } = threeRef.current;
+    if (!timMesh) return;
+    timMesh.material.emissive.set(timActive ? 0x0033cc : 0x000000);
+    timMesh.material.emissiveIntensity = timActive ? 0.5 : 0;
+  }, [timActive]);
+
+  // Sync cpu emissive
+  useEffect(() => {
+    const { cpuGroup } = threeRef.current;
+    if (!cpuGroup) return;
+    cpuGroup.traverse(m => {
+      if (!m.isMesh || !m.material) return;
+      m.material.emissive = new THREE.Color(cpuActive ? 0x0033cc : 0x000000);
+      m.material.emissiveIntensity = cpuActive ? 0.4 : 0;
+    });
+  }, [cpuActive]);
+
+  // Sync mobo emissive
+  useEffect(() => {
+    const { moboGroup } = threeRef.current;
+    if (!moboGroup) return;
+    moboGroup.traverse(m => {
+      if (!m.isMesh || !m.material) return;
+      const c = m.material.color;
+      // не чіпаємо RGB смугу (червона)
+      if (c && c.r > 0.8 && c.g < 0.2) return;
+      m.material.emissive = new THREE.Color(moboActive ? 0x0033cc : 0x000000);
+      m.material.emissiveIntensity = moboActive ? 0.35 : 0;
+    });
+  }, [moboActive]);
 
   // Three.js init
   useEffect(() => {
@@ -502,8 +981,22 @@ function PCBuild() {
       if (nowHover !== hoverRef.current) {
         hoverRef.current = nowHover;
         setHandleHover(nowHover);
-        renderer.domElement.style.cursor = nowHover ? 'pointer' : 'grab';
       }
+      // Cooler → TIM → CPU → Mobo (пріоритет)
+      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg } = threeRef.current;
+      const clHits = clg ? raycaster.intersectObjects(clg.children, true) : [];
+      const hitsCooler = clHits.length > 0;
+      const tHits = (!hitsCooler && tg) ? raycaster.intersectObjects(tg.children, true) : [];
+      const hitsTim = tHits.length > 0;
+      const cHits = (!hitsCooler && !hitsTim && cg) ? raycaster.intersectObjects(cg.children, true) : [];
+      const hitsCpu = cHits.length > 0;
+      const mHits = (!hitsCooler && !hitsTim && !hitsCpu && mg) ? raycaster.intersectObjects(mg.children, true) : [];
+      const hitsMobo = mHits.length > 0;
+      setCoolerHover(hitsCooler);
+      setTimHover(hitsTim);
+      setCpuHover(hitsCpu);
+      setMoboHover(hitsMobo);
+      renderer.domElement.style.cursor = (nowHover || hitsCooler || hitsTim || hitsCpu || hitsMobo) ? 'pointer' : 'grab';
     };
     const onMouseLeave = () => { spotLight.intensity = 0; };
 
@@ -514,11 +1007,19 @@ function PCBuild() {
       if (pMoved) return;
       getNDC(e);
       raycaster.setFromCamera(ndcMouse, camera);
-      if (raycaster.intersectObjects(handleMeshes, false).length > 0) {
-        setHandlePinned(v => !v);
-      } else {
-        setHandlePinned(false);
-      }
+      const hitHandle = raycaster.intersectObjects(handleMeshes, false).length > 0;
+      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg } = threeRef.current;
+      const hitCooler = clg ? raycaster.intersectObjects(clg.children, true).length > 0 : false;
+      const hitTim    = !hitCooler && tg  ? raycaster.intersectObjects(tg.children,  true).length > 0 : false;
+      const hitCpu    = !hitCooler && !hitTim && cg ? raycaster.intersectObjects(cg.children, true).length > 0 : false;
+      const hitMobo   = !hitCooler && !hitTim && !hitCpu && mg ? raycaster.intersectObjects(mg.children, true).length > 0 : false;
+      const reset = () => { setHandlePinned(false); setMoboPinned(false); setCpuPinned(false); setTimPinned(false); setCoolerPinned(false); };
+      if (hitHandle)      { reset(); setHandlePinned(v => !v); }
+      else if (hitCooler) { reset(); setCoolerPinned(v => !v); }
+      else if (hitTim)    { reset(); setTimPinned(v => !v); }
+      else if (hitCpu)    { reset(); setCpuPinned(v => !v); }
+      else if (hitMobo)   { reset(); setMoboPinned(v => !v); }
+      else                { reset(); }
     };
 
     renderer.domElement.addEventListener('mousemove',   onMouseMove);
@@ -545,12 +1046,16 @@ function PCBuild() {
 
       // Плавна анімація розкриття (lerp до target)
       const target = explodeRef.current;
-      const { frontGroup, glassGroup, topGroup,
-              EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP } = threeRef.current;
+      const { frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, coolerGroup,
+              EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER } = threeRef.current;
       if (frontGroup && glassGroup && topGroup) {
-        frontGroup.position.z += (target * EXPLODE_FRONT - frontGroup.position.z) * 0.08;
-        glassGroup.position.x += (target * (-EXPLODE_GLASS) - glassGroup.position.x) * 0.08;
-        topGroup.position.y   += (target * EXPLODE_TOP   - topGroup.position.y)   * 0.08;
+        frontGroup.position.z  += (target * EXPLODE_FRONT   - frontGroup.position.z)  * 0.08;
+        glassGroup.position.x  += (target * (-EXPLODE_GLASS) - glassGroup.position.x)  * 0.08;
+        topGroup.position.y    += (target * EXPLODE_TOP     - topGroup.position.y)    * 0.08;
+        if (moboGroup)   moboGroup.position.x   += (target * (-EXPLODE_MOBO)   - moboGroup.position.x)   * 0.08;
+        if (cpuGroup)    cpuGroup.position.x    += (target * (-EXPLODE_CPU)    - cpuGroup.position.x)    * 0.08;
+        if (timGroup)    timGroup.position.x    += (target * (-EXPLODE_TIM)    - timGroup.position.x)    * 0.08;
+        if (coolerGroup) coolerGroup.position.x += (target * (-EXPLODE_COOLER) - coolerGroup.position.x) * 0.08;
       }
 
       controls.update();
@@ -627,10 +1132,19 @@ function PCBuild() {
           <div className="build-panel corners">
             <div className="br-tr"></div><div className="br-bl"></div>
             <div className="build-panel-header">
-              <span className="label">{handleActive && caseData ? caseData.cat : 'Натисни ручку'}</span>
-              {handleActive && <span className="label" style={{ color: 'var(--red)' }}>/01/</span>}
+              <span className="label">
+                {activePanel === 'case'   && caseData   ? caseData.cat
+                : activePanel === 'mobo'   && moboData   ? moboData.cat
+                : activePanel === 'cpu'    && cpuData    ? cpuData.cat
+                : activePanel === 'tim'    && timData    ? timData.cat
+                : activePanel === 'cooler' && coolerData ? coolerData.cat
+                : 'Клікни на деталь'}
+              </span>
+              {activePanel && <span className="label" style={{ color: 'var(--red)' }}>
+                {activePanel === 'case' ? '/01/' : activePanel === 'mobo' ? '/02/' : activePanel === 'cpu' ? '/03/' : activePanel === 'tim' ? '/04/' : '/05/'}
+              </span>}
             </div>
-            {handleActive && caseData ? (
+            {activePanel === 'case' && caseData ? (
               <>
                 <div className="build-panel-title">{caseData.name}</div>
                 <div className="build-panel-sub">{caseData.model}</div>
@@ -645,13 +1159,74 @@ function PCBuild() {
                   <span className="amount mono">{caseData.price.toLocaleString('uk-UA')} ₴</span>
                 </div>
               </>
+            ) : activePanel === 'cooler' && coolerData ? (
+              <>
+                <div className="build-panel-title">{coolerData.name}</div>
+                <div className="build-panel-sub">{coolerData.model}</div>
+                <p className="build-panel-desc">{coolerData.desc}</p>
+                <div className="build-panel-specs">
+                  {coolerData.specs.map(([k, v], i) => (
+                    <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
+                  ))}
+                </div>
+                <div className="build-panel-price">
+                  <span className="label">Ціна</span>
+                  <span className="amount mono">{coolerData.price.toLocaleString('uk-UA')} ₴</span>
+                </div>
+              </>
+            ) : activePanel === 'tim' && timData ? (
+              <>
+                <div className="build-panel-title">{timData.name}</div>
+                <div className="build-panel-sub">{timData.model}</div>
+                <p className="build-panel-desc">{timData.desc}</p>
+                <div className="build-panel-specs">
+                  {timData.specs.map(([k, v], i) => (
+                    <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
+                  ))}
+                </div>
+                <div className="build-panel-price">
+                  <span className="label">Ціна</span>
+                  <span className="amount mono">{timData.price.toLocaleString('uk-UA')} ₴</span>
+                </div>
+              </>
+            ) : activePanel === 'cpu' && cpuData ? (
+              <>
+                <div className="build-panel-title">{cpuData.name}</div>
+                <div className="build-panel-sub">{cpuData.model}</div>
+                <p className="build-panel-desc">{cpuData.desc}</p>
+                <div className="build-panel-specs">
+                  {cpuData.specs.map(([k, v], i) => (
+                    <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
+                  ))}
+                </div>
+                <div className="build-panel-price">
+                  <span className="label">Ціна</span>
+                  <span className="amount mono">{cpuData.price.toLocaleString('uk-UA')} ₴</span>
+                </div>
+              </>
+            ) : activePanel === 'mobo' && moboData ? (
+              <>
+                <div className="build-panel-title">{moboData.name}</div>
+                <div className="build-panel-sub">{moboData.model}</div>
+                <p className="build-panel-desc">{moboData.desc}</p>
+                <div className="build-panel-specs">
+                  {moboData.specs.map(([k, v], i) => (
+                    <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
+                  ))}
+                </div>
+                <div className="build-panel-price">
+                  <span className="label">Ціна</span>
+                  <span className="amount mono">{moboData.price.toLocaleString('uk-UA')} ₴</span>
+                </div>
+              </>
             ) : (
               <div className="build-panel-empty">
                 <div className="ph-mark">◢</div>
-                <div className="ph-h">GameMax Spark Air</div>
+                <div className="ph-h">Інтерактивна модель</div>
                 <div className="ph-p">
-                  Наведи або клікни на <strong>ручку зверху</strong> — характеристики та ціна.<br /><br />
-                  <strong>Drag</strong> — крути корпус у будь-який бік.
+                  Клікни на <strong>ручку</strong> — корпус.<br/>
+                  Клікни на <strong>материнську плату</strong> або <strong>процесор</strong> — характеристики.<br /><br />
+                  <strong>Drag</strong> — крути · <strong>Scroll</strong> — zoom.
                 </div>
               </div>
             )}
