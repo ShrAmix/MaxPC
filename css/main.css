@@ -1,0 +1,398 @@
+/* ============================================
+   PC MAX EDITION — Cyberpunk Neon Design System
+   ============================================ */
+
+:root {
+  --bg-0: #07070c;
+  --bg-1: #0c0c14;
+  --bg-2: #11111c;
+  --bg-3: #181826;
+  --line: #23233a;
+  --line-2: #2e2e4a;
+  --text: #f4f4f8;
+  --text-dim: #a8a8b8;
+  --text-mute: #6e6e82;
+
+  --red: #ff2e3d;
+  --red-glow: #ff3b48;
+  --red-soft: rgba(255, 46, 61, 0.18);
+  --red-line: rgba(255, 46, 61, 0.4);
+
+  --cyan: #00e6ff;
+  --cyan-soft: rgba(0, 230, 255, 0.16);
+  --cyan-line: rgba(0, 230, 255, 0.35);
+
+  --green: #2bff88;
+  --amber: #ffb547;
+  --violet: #a87bff;
+
+  --font-display: 'Chakra Petch', 'Rajdhani', sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --shadow-glow-red: 0 0 30px rgba(255, 46, 61, 0.35), 0 0 80px rgba(255, 46, 61, 0.15);
+  --shadow-glow-cyan: 0 0 30px rgba(0, 230, 255, 0.35), 0 0 80px rgba(0, 230, 255, 0.12);
+
+  --max-w: 1320px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg-0);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(1200px 800px at 80% -10%, rgba(255, 46, 61, 0.08), transparent 60%),
+    radial-gradient(1000px 700px at -10% 30%, rgba(0, 230, 255, 0.05), transparent 60%),
+    var(--bg-0);
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Grid background overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+}
+
+#particles-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+#app {
+  position: relative;
+  z-index: 2;
+}
+
+/* ============================================
+   Typography
+   ============================================ */
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.05; }
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--red);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.eyebrow::before {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: var(--red);
+}
+
+.glow-red {
+  color: var(--red);
+  text-shadow:
+    0 0 12px rgba(255, 46, 61, 0.6),
+    0 0 32px rgba(255, 46, 61, 0.35);
+}
+
+.glow-cyan {
+  color: var(--cyan);
+  text-shadow:
+    0 0 12px rgba(0, 230, 255, 0.6),
+    0 0 32px rgba(0, 230, 255, 0.3);
+}
+
+/* ============================================
+   Layout
+   ============================================ */
+
+.container {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+section {
+  position: relative;
+  padding: 120px 0;
+}
+
+.section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 64px;
+  max-width: 800px;
+}
+
+.section-title {
+  font-size: clamp(36px, 5vw, 64px);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.section-sub {
+  color: var(--text-dim);
+  font-size: 17px;
+  max-width: 620px;
+  line-height: 1.55;
+}
+
+/* ============================================
+   Nav
+   ============================================ */
+
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 50;
+  padding: 18px 0;
+  background: linear-gradient(180deg, rgba(7,7,12,0.85), rgba(7,7,12,0));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s, background 0.3s;
+}
+.nav.scrolled {
+  background: rgba(7,7,12,0.85);
+  border-bottom-color: var(--line);
+}
+.nav-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.nav-brand-mark {
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--red);
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: var(--red);
+  box-shadow: var(--shadow-glow-red);
+  position: relative;
+}
+.nav-brand-mark::before,
+.nav-brand-mark::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border: 1.5px solid var(--red);
+}
+.nav-brand-mark::before { top: -4px; left: -4px; border-right: none; border-bottom: none; }
+.nav-brand-mark::after { bottom: -4px; right: -4px; border-left: none; border-top: none; }
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.nav-links a {
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.2s;
+  position: relative;
+}
+.nav-links a:hover { color: var(--red); }
+.nav-links a::before {
+  content: '';
+  position: absolute;
+  bottom: -6px; left: 0;
+  width: 0; height: 1px;
+  background: var(--red);
+  transition: width 0.3s;
+}
+.nav-links a:hover::before { width: 100%; }
+
+@media (max-width: 760px) {
+  .nav-links { display: none; }
+}
+
+/* ============================================
+   Buttons / corner brackets
+   ============================================ */
+
+.corners {
+  position: relative;
+}
+.corners::before, .corners::after,
+.corners > .br-tr, .corners > .br-bl {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--red);
+  z-index: 2;
+  pointer-events: none;
+}
+.corners::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+.corners::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+.corners > .br-tr { top: -1px; right: -1px; border-left: none; border-bottom: none; }
+.corners > .br-bl { bottom: -1px; left: -1px; border-right: none; border-top: none; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--red-line);
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+.btn:hover {
+  background: var(--red-soft);
+  border-color: var(--red);
+  box-shadow: 0 0 20px rgba(255, 46, 61, 0.35);
+  color: white;
+}
+.btn-primary {
+  background: var(--red);
+  border-color: var(--red);
+  color: white;
+  box-shadow: 0 0 24px rgba(255, 46, 61, 0.4);
+}
+.btn-primary:hover {
+  background: var(--red-glow);
+  box-shadow: 0 0 40px rgba(255, 46, 61, 0.6);
+}
+
+/* ============================================
+   Cards
+   ============================================ */
+
+.card {
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+  border: 1px solid var(--line);
+  position: relative;
+  transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+}
+.card:hover {
+  border-color: var(--red-line);
+  box-shadow: 0 0 0 1px var(--red-line), 0 12px 40px -10px rgba(255, 46, 61, 0.25);
+}
+
+/* ============================================
+   Reveal animation
+   ============================================ */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.reveal-stagger.visible > * {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-stagger.visible > *:nth-child(1) { transition-delay: 0.05s; }
+.reveal-stagger.visible > *:nth-child(2) { transition-delay: 0.1s; }
+.reveal-stagger.visible > *:nth-child(3) { transition-delay: 0.15s; }
+.reveal-stagger.visible > *:nth-child(4) { transition-delay: 0.2s; }
+.reveal-stagger.visible > *:nth-child(5) { transition-delay: 0.25s; }
+.reveal-stagger.visible > *:nth-child(6) { transition-delay: 0.3s; }
+.reveal-stagger.visible > *:nth-child(7) { transition-delay: 0.35s; }
+.reveal-stagger.visible > *:nth-child(8) { transition-delay: 0.4s; }
+.reveal-stagger.visible > *:nth-child(9) { transition-delay: 0.45s; }
+.reveal-stagger.visible > *:nth-child(10) { transition-delay: 0.5s; }
+.reveal-stagger.visible > *:nth-child(11) { transition-delay: 0.55s; }
+
+/* ============================================
+   Utility
+   ============================================ */
+
+.divider-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--red-line), transparent);
+  margin: 0;
+}
+
+.tag {
+  display: inline-block;
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border: 1px solid var(--line-2);
+  color: var(--text-dim);
+}
+.tag.red { color: var(--red); border-color: var(--red-line); background: var(--red-soft); }
+.tag.cyan { color: var(--cyan); border-color: var(--cyan-line); background: var(--cyan-soft); }
+.tag.green { color: var(--green); border-color: rgba(43,255,136,0.35); background: rgba(43,255,136,0.1); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg-0); }
+::-webkit-scrollbar-thumb { background: var(--line-2); border: 2px solid var(--bg-0); }
+::-webkit-scrollbar-thumb:hover { background: var(--red); }
+
+/* Selection */
+::selection { background: var(--red); color: white; }
