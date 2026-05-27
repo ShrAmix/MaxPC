@@ -422,7 +422,7 @@ function buildScene(threeRef) {
   const EXPLODE_SSD = 160;  // Трішки менше ніж CPU (який на 180)
   const EXPLODE_PSU = 80;   // Блок живлення відлітає вгору
 
-  const EXPLODE_GPU = 300;  // Відеокарта виїжджає вліво до скла
+  const EXPLODE_GPU = 250;  // Відеокарта виїжджає вліво до скла
 
   const moboGroup = new THREE.Group();
   const ssdGroup = new THREE.Group();
@@ -817,7 +817,7 @@ function buildScene(threeRef) {
   cpuGroup.add(labelMesh);
 
   // ── Термопрокладка Honeywell PTM7950 (окрема група, виїжджає далі за CPU) ──
-  const EXPLODE_TIM = 260;
+  const EXPLODE_TIM = 200;
   const timGroup = new THREE.Group();
   caseGroup.add(timGroup);
 
@@ -830,7 +830,7 @@ function buildScene(threeRef) {
   timGroup.add(timMesh);
 
 // ── Cooler: ID-COOLING Frozn A410 DK Black ──
-  const EXPLODE_COOLER = 320;
+  const EXPLODE_COOLER = 250;
   const coolerGroup = new THREE.Group();
   caseGroup.add(coolerGroup);
 
@@ -1720,6 +1720,7 @@ function PCBuild() {
         if (psuGroup)      psuGroup.position.y      += (target * EXPLODE_PSU       - psuGroup.position.y)      * 0.08;
         if (gpuGroup)      gpuGroup.position.x      += (target * (-EXPLODE_GPU)    - gpuGroup.position.x)      * 0.08;
       }
+
 
       controls.update();
       renderer.render(scene, camera);
