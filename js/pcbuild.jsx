@@ -420,10 +420,12 @@ function buildScene(threeRef) {
   // ── НАЛАШТУВАННЯ ЗМІЩЕННЯ МАТЕРИНКИ ──
  const EXPLODE_MOBO = 120; // вліво (до скла) при розкритті
   const EXPLODE_SSD = 160;  // Трішки менше ніж CPU (який на 180)
+  const EXPLODE_PSU = 80;   // Блок живлення відлітає вгору
 
   const moboGroup = new THREE.Group();
   const ssdGroup = new THREE.Group();
-  caseGroup.add(moboGroup, ssdGroup);
+  const psuGroup = new THREE.Group();
+  caseGroup.add(moboGroup, ssdGroup, psuGroup);
 
   const MB  = 220;        // розмір плати (мм)
   const mpX = W - T - 4;  // X поверхні PCB
@@ -1111,15 +1113,107 @@ function buildScene(threeRef) {
   // Z = D - T - 12.5 (всередину від передньої панелі), rotation.y = PI (лицем всередину)
   const fanFrontGroup = createArcticFan(frontGroup, W / 2, 70, D - T - 12.5, 0, Math.PI, 0);
   
+  // ── Блок живлення: MSI MAG A550BN ──
+  const psuW = 150;
+  const psuH = 86;
+  const psuD = 140;
+
+  const psuX = W / 2;
+  const psuY = H - psuD / 2 - 15;
+  const psuZ = D - psuH / 2 - 20;
+
+  const psuModel = new THREE.Group();
+  psuModel.position.set(psuX, psuY, psuZ);
+  psuModel.rotation.x = Math.PI / 2;
+  psuGroup.add(psuModel);
+
+  // 1. Основний корпус
+  const psuBody = new THREE.Mesh(
+    new THREE.BoxGeometry(psuW, psuH, psuD),
+    new THREE.MeshStandardMaterial({ color: 0x161618, roughness: 0.7, metalness: 0.4 })
+  );
+  psuBody.castShadow = true; psuBody.receiveShadow = true;
+  psuModel.add(psuBody);
+
+  // 2. Бокова деколь MAG
+  const magCanv = document.createElement('canvas');
+  magCanv.width = 280; magCanv.height = 172;
+  const ctxM = magCanv.getContext('2d');
+  ctxM.fillStyle = '#1a1a1c'; ctxM.fillRect(0, 0, 280, 172);
+  ctxM.fillStyle = '#0a0a0c';
+  for (let i = 10; i < 270; i += 12) ctxM.fillRect(i, 10, 6, 152);
+  ctxM.strokeStyle = '#666'; ctxM.lineWidth = 12; ctxM.lineJoin = 'miter';
+  ctxM.beginPath(); ctxM.moveTo(15, 160); ctxM.lineTo(55, 86); ctxM.lineTo(15, 12); ctxM.stroke();
+  ctxM.beginPath(); ctxM.moveTo(240, 160); ctxM.lineTo(270, 86); ctxM.lineTo(240, 12); ctxM.stroke();
+  ctxM.fillStyle = '#888';
+  ctxM.font = 'italic bold 34px Arial'; ctxM.fillText('/// MAG ///', 65, 96);
+  ctxM.font = 'italic bold 22px Arial'; ctxM.fillText('msi', 220, 155);
+  const magPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(psuD - 2, psuH - 2),
+    new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(magCanv), roughness: 0.5 })
+  );
+  magPlane.rotation.y = -Math.PI / 2;
+  magPlane.position.set(-psuW / 2 - 0.5, 0, 0);
+  psuModel.add(magPlane);
+
+  // 3. Кришка з решіткою кулера
+  const fgCanv = document.createElement('canvas');
+  fgCanv.width = 300; fgCanv.height = 280;
+  const ctxF = fgCanv.getContext('2d');
+  ctxF.fillStyle = '#1a1a1c'; ctxF.fillRect(0, 0, 300, 280);
+  ctxF.fillStyle = '#050505'; ctxF.beginPath(); ctxF.arc(150, 140, 125, 0, Math.PI * 2); ctxF.fill();
+  ctxF.fillStyle = '#222';
+  for (let i = 25; i < 280; i += 18) ctxF.fillRect(20, i, 260, 6);
+  ctxF.fillStyle = '#111'; ctxF.beginPath();
+  ctxF.moveTo(150, 90); ctxF.lineTo(190, 105); ctxF.lineTo(150, 180); ctxF.lineTo(110, 105); ctxF.fill();
+  ctxF.strokeStyle = '#555'; ctxF.lineWidth = 3; ctxF.stroke();
+  const fanPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(psuW - 2, psuD - 2),
+    new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(fgCanv), roughness: 0.4 })
+  );
+  fanPlane.rotation.x = -Math.PI / 2;
+  fanPlane.position.set(0, psuH / 2 + 0.5, 0);
+  psuModel.add(fanPlane);
+
+  // 4. Задня панель (AC вхід + перфорація)
+  const acCanv = document.createElement('canvas');
+  acCanv.width = 300; acCanv.height = 172;
+  const ctxA = acCanv.getContext('2d');
+  ctxA.fillStyle = '#111'; ctxA.fillRect(0, 0, 300, 172);
+  ctxA.fillStyle = '#050505';
+  for (let y = 10; y < 160; y += 10) {
+    for (let x = 10; x < 200; x += 10) { ctxA.beginPath(); ctxA.arc(x + (y % 20 === 0 ? 5 : 0), y, 3, 0, Math.PI * 2); ctxA.fill(); }
+  }
+  ctxA.fillStyle = '#0a0a0c'; ctxA.fillRect(210, 80, 70, 50);
+  ctxA.fillStyle = '#555'; ctxA.fillRect(225, 95, 10, 20); ctxA.fillRect(240, 95, 10, 20); ctxA.fillRect(255, 95, 10, 20);
+  ctxA.fillStyle = '#050505'; ctxA.fillRect(220, 30, 40, 30);
+  ctxA.fillStyle = '#888'; ctxA.font = 'bold 20px Arial'; ctxA.fillText('I', 235, 52);
+  const acPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(psuW - 2, psuH - 2),
+    new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(acCanv), roughness: 0.6 })
+  );
+  acPlane.rotation.y = Math.PI;
+  acPlane.position.set(0, 0, -psuD / 2 - 0.5);
+  psuModel.add(acPlane);
+
+  // 5. Пучок кабелів
+  const cables = new THREE.Mesh(
+    new THREE.CylinderGeometry(16, 16, 50, 16),
+    new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.9 })
+  );
+  cables.rotation.x = Math.PI / 2;
+  cables.position.set(40, 0, psuD / 2 + 25);
+  psuModel.add(cables);
+
   threeRef.current = {
     ...threeRef.current,
     scene, camera, renderer, spotLight, bodyMeshes, handleMeshes, hddLed,
-    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup, ramGroup, ssdGroup, ssd2Group, caseFansGroup, fanRearGroup, fanFrontGroup,
-    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM, EXPLODE_SSD, EXPLODE_SSD2, EXPLODE_FANS,
+    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup, ramGroup, ssdGroup, ssd2Group, psuGroup, caseFansGroup, fanRearGroup, fanFrontGroup,
+    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM, EXPLODE_SSD, EXPLODE_SSD2, EXPLODE_PSU, EXPLODE_FANS,
   };
   return { scene, camera, renderer, spotLight, bodyMeshes, handleMeshes, hddLed,
-    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup, ramGroup, ssdGroup, ssd2Group, caseFansGroup, fanRearGroup, fanFrontGroup,
-    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM, EXPLODE_SSD, EXPLODE_SSD2, EXPLODE_FANS };
+    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup, ramGroup, ssdGroup, ssd2Group, psuGroup, caseFansGroup, fanRearGroup, fanFrontGroup,
+    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM, EXPLODE_SSD, EXPLODE_SSD2, EXPLODE_PSU, EXPLODE_FANS };
 }
 
 // ── Component ────────────────────────────────────────────────────────
@@ -1149,6 +1243,8 @@ function PCBuild() {
   const [ssdHover,     setSsdHover]     = useState(false);
   const [fanPinned,    setFanPinned]    = useState(false);
   const [fanHover,     setFanHover]     = useState(false);
+  const [psuPinned,    setPsuPinned]    = useState(false);
+  const [psuHover,     setPsuHover]     = useState(false);
   const handleActive = handleHover || handlePinned;
   const moboActive   = moboHover   || moboPinned;
   const cpuActive    = cpuHover    || cpuPinned;
@@ -1158,8 +1254,9 @@ function PCBuild() {
   const ssdActive    = ssdHover    || ssdPinned;
   const ssd2Active   = ssd2Hover   || ssd2Pinned;
   const fanActive    = fanHover    || fanPinned;
+  const psuActive    = psuHover    || psuPinned;
 
-  const activePanel = fanActive ? 'fan' : ssdActive ? 'ssd' : ssd2Active ? 'ssd2' : ramActive ? 'ram' : coolerActive ? 'cooler' : timActive ? 'tim' : cpuActive ? 'cpu' : moboActive ? 'mobo' : handleActive ? 'case' : null;
+  const activePanel = psuActive ? 'psu' : fanActive ? 'fan' : ssdActive ? 'ssd' : ssd2Active ? 'ssd2' : ramActive ? 'ram' : coolerActive ? 'cooler' : timActive ? 'tim' : cpuActive ? 'cpu' : moboActive ? 'mobo' : handleActive ? 'case' : null;
 
   const caseData   = window.BUILD_DATA?.parts?.find(p => p.id === 'case');
   const moboData   = window.BUILD_DATA?.parts?.find(p => p.id === 'mobo');
@@ -1181,6 +1278,11 @@ function PCBuild() {
     name: 'Kingston NV3', model: '1TB · NVMe M.2 PCIe 4.0', cat: 'SSD #2 — ігри', price: 3300,
     desc: 'Терабайт PCIe 4.0 NVMe під ігрову бібліотеку. Cyberpunk, GOW, Forza — нехай ставляться всі одразу і завантажуються за секунди.',
     specs: [["Об'єм", '1 TB'], ['Інтерфейс', 'PCIe 4.0 x4 NVMe'], ['Форм-фактор', 'M.2 2280'], ['NAND', '3D NAND'], ['Модель', 'SNV3S/1000G']],
+  };
+  const psuData    = window.BUILD_DATA?.parts?.find(p => p.id === 'psu') || {
+    name: 'MSI MAG A550BN', model: '550W · 80+ Bronze · ATX', cat: 'Блок живлення', price: 2599,
+    desc: 'Надійний БЖ з DC-DC перетворювачем, тихим 120мм вентилятором та фірмовим дизайном MAG. Захист від перевантаження, короткого замикання та перенапруги.',
+    specs: [['Потужність', '550 Вт'], ['Сертифікат', '80 PLUS Bronze'], ['Вентилятор', '120 мм'], ['Захисти', 'OVP / UVP / OCP / SCP'], ['Роз\'єми', '24-pin, 8-pin, 6+2 PCIe'], ['Форм-фактор', 'ATX']],
   };
 
   // Sync handle emissive
@@ -1286,6 +1388,19 @@ function PCBuild() {
     });
   }, [fanActive]);
 
+  // Sync psu emissive
+  useEffect(() => {
+    const { psuGroup } = threeRef.current;
+    if (!psuGroup) return;
+    psuGroup.traverse(m => {
+      if (!m.isMesh || !m.material || !m.material.isMeshStandardMaterial) return;
+      if (m.material.map) return; // не чіпаємо текстурні наклейки
+      if (!m.material.emissive) m.material.emissive = new THREE.Color(0x000000);
+      m.material.emissive.set(psuActive ? 0x0033cc : 0x000000);
+      m.material.emissiveIntensity = psuActive ? 0.4 : 0;
+    });
+  }, [psuActive]);
+
   // Three.js init
   useEffect(() => {
     if (!mountRef.current || !window.THREE) return;
@@ -1339,7 +1454,7 @@ function PCBuild() {
         setHandleHover(nowHover);
       }
       // Fan → RAM → Cooler → TIM → CPU → SSD → SSD2 → Mobo (пріоритет)
-      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg, ramGroup: rg, ssdGroup: sg, ssd2Group: sg2, fanRearGroup: frg, fanFrontGroup: ffg } = threeRef.current;
+      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg, ramGroup: rg, ssdGroup: sg, ssd2Group: sg2, psuGroup: pg, fanRearGroup: frg, fanFrontGroup: ffg } = threeRef.current;
       // вентилятори: перевіряємо обидва, але результат один стан
       const fanAllChildren = [...(frg ? frg.children : []), ...(ffg ? ffg.children : [])];
       const hitsFan  = fanAllChildren.length > 0 && raycaster.intersectObjects(fanAllChildren, true).length > 0;
@@ -1355,7 +1470,9 @@ function PCBuild() {
       const hitsSsd  = sHits.length > 0;
       const s2Hits   = (!hitsFan && !hitsRam && !hitsCooler && !hitsTim && !hitsCpu && !hitsSsd && sg2) ? raycaster.intersectObjects(sg2.children, true) : [];
       const hitsSsd2 = s2Hits.length > 0;
-      const mHits    = (!hitsFan && !hitsRam && !hitsCooler && !hitsTim && !hitsCpu && !hitsSsd && !hitsSsd2 && mg) ? raycaster.intersectObjects(mg.children, true) : [];
+      const pHits    = (!hitsFan && !hitsRam && !hitsCooler && !hitsTim && !hitsCpu && !hitsSsd && !hitsSsd2 && pg) ? raycaster.intersectObjects(pg.children, true) : [];
+      const hitsPsu  = pHits.length > 0;
+      const mHits    = (!hitsFan && !hitsRam && !hitsCooler && !hitsTim && !hitsCpu && !hitsSsd && !hitsSsd2 && !hitsPsu && mg) ? raycaster.intersectObjects(mg.children, true) : [];
       const hitsMobo = mHits.length > 0;
       setFanHover(hitsFan);
       setRamHover(hitsRam);
@@ -1364,8 +1481,9 @@ function PCBuild() {
       setCpuHover(hitsCpu);
       setSsdHover(hitsSsd);
       setSsd2Hover(hitsSsd2);
+      setPsuHover(hitsPsu);
       setMoboHover(hitsMobo);
-      renderer.domElement.style.cursor = (nowHover || hitsFan || hitsRam || hitsCooler || hitsTim || hitsCpu || hitsSsd || hitsSsd2 || hitsMobo) ? 'pointer' : 'grab';
+      renderer.domElement.style.cursor = (nowHover || hitsFan || hitsRam || hitsCooler || hitsTim || hitsCpu || hitsSsd || hitsSsd2 || hitsPsu || hitsMobo) ? 'pointer' : 'grab';
     };
     const onMouseLeave = () => { spotLight.intensity = 0; };
 
@@ -1377,7 +1495,7 @@ function PCBuild() {
       getNDC(e);
       raycaster.setFromCamera(ndcMouse, camera);
       const hitHandle = raycaster.intersectObjects(handleMeshes, false).length > 0;
-      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg, ramGroup: rg, ssdGroup: sg, ssd2Group: sg2, fanRearGroup: frg, fanFrontGroup: ffg } = threeRef.current;
+      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg, ramGroup: rg, ssdGroup: sg, ssd2Group: sg2, psuGroup: pg, fanRearGroup: frg, fanFrontGroup: ffg } = threeRef.current;
       const fanAll  = [...(frg ? frg.children : []), ...(ffg ? ffg.children : [])];
       const hitFan  = fanAll.length > 0 && raycaster.intersectObjects(fanAll, true).length > 0;
       const hitRam    = !hitFan && rg  ? raycaster.intersectObjects(rg.children,  true).length > 0 : false;
@@ -1386,8 +1504,9 @@ function PCBuild() {
       const hitCpu    = !hitFan && !hitRam && !hitCooler && !hitTim && cg  ? raycaster.intersectObjects(cg.children,  true).length > 0 : false;
       const hitSsd    = !hitFan && !hitRam && !hitCooler && !hitTim && !hitCpu && sg  ? raycaster.intersectObjects(sg.children,  true).length > 0 : false;
       const hitSsd2   = !hitFan && !hitRam && !hitCooler && !hitTim && !hitCpu && !hitSsd && sg2 ? raycaster.intersectObjects(sg2.children, true).length > 0 : false;
-      const hitMobo   = !hitFan && !hitRam && !hitCooler && !hitTim && !hitCpu && !hitSsd && !hitSsd2 && mg ? raycaster.intersectObjects(mg.children, true).length > 0 : false;
-      const reset = () => { setHandlePinned(false); setMoboPinned(false); setCpuPinned(false); setTimPinned(false); setCoolerPinned(false); setRamPinned(false); setSsdPinned(false); setSsd2Pinned(false); setFanPinned(false); };
+      const hitPsu    = !hitFan && !hitRam && !hitCooler && !hitTim && !hitCpu && !hitSsd && !hitSsd2 && pg ? raycaster.intersectObjects(pg.children, true).length > 0 : false;
+      const hitMobo   = !hitFan && !hitRam && !hitCooler && !hitTim && !hitCpu && !hitSsd && !hitSsd2 && !hitPsu && mg ? raycaster.intersectObjects(mg.children, true).length > 0 : false;
+      const reset = () => { setHandlePinned(false); setMoboPinned(false); setCpuPinned(false); setTimPinned(false); setCoolerPinned(false); setRamPinned(false); setSsdPinned(false); setSsd2Pinned(false); setFanPinned(false); setPsuPinned(false); };
       if (hitHandle)      { reset(); setHandlePinned(v => !v); }
       else if (hitFan)    { reset(); setFanPinned(v => !v); }
       else if (hitRam)    { reset(); setRamPinned(v => !v); }
@@ -1396,6 +1515,7 @@ function PCBuild() {
       else if (hitCpu)    { reset(); setCpuPinned(v => !v); }
       else if (hitSsd)    { reset(); setSsdPinned(v => !v); }
       else if (hitSsd2)   { reset(); setSsd2Pinned(v => !v); }
+      else if (hitPsu)    { reset(); setPsuPinned(v => !v); }
       else if (hitMobo)   { reset(); setMoboPinned(v => !v); }
       else                { reset(); }
     };
@@ -1424,8 +1544,8 @@ function PCBuild() {
 
       // Плавна анімація розкриття (lerp до target)
       const target = explodeRef.current;
-      const { frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, coolerGroup, ramGroup, ssdGroup, ssd2Group, caseFansGroup, fanFrontGroup,
-              EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM, EXPLODE_SSD, EXPLODE_SSD2, EXPLODE_FANS } = threeRef.current;
+      const { frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, coolerGroup, ramGroup, ssdGroup, ssd2Group, psuGroup, caseFansGroup, fanFrontGroup,
+              EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM, EXPLODE_SSD, EXPLODE_SSD2, EXPLODE_PSU, EXPLODE_FANS } = threeRef.current;
       if (frontGroup && glassGroup && topGroup) {
         frontGroup.position.z  += (target * EXPLODE_FRONT    - frontGroup.position.z)  * 0.08;
         glassGroup.position.x  += (target * (-EXPLODE_GLASS) - glassGroup.position.x)  * 0.08;
@@ -1438,6 +1558,7 @@ function PCBuild() {
         if (timGroup)    timGroup.position.x     += (target * (-EXPLODE_TIM)    - timGroup.position.x)    * 0.08;
         if (coolerGroup)   coolerGroup.position.x   += (target * (-EXPLODE_COOLER) - coolerGroup.position.x)   * 0.08;
         if (caseFansGroup) caseFansGroup.position.x += (target * (-EXPLODE_FANS)   - caseFansGroup.position.x) * 0.08;
+        if (psuGroup)      psuGroup.position.y      += (target * EXPLODE_PSU       - psuGroup.position.y)      * 0.08;
       }
 
       controls.update();
@@ -1618,6 +1739,21 @@ function PCBuild() {
                 <div className="build-panel-price">
                   <span className="label">Ціна</span>
                   <span className="amount mono">{fanData.price.toLocaleString('uk-UA')} ₴</span>
+                </div>
+              </>
+            ) : activePanel === 'psu' && psuData ? (
+              <>
+                <div className="build-panel-title">{psuData.name}</div>
+                <div className="build-panel-sub">{psuData.model}</div>
+                <p className="build-panel-desc">{psuData.desc}</p>
+                <div className="build-panel-specs">
+                  {psuData.specs.map(([k, v], i) => (
+                    <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
+                  ))}
+                </div>
+                <div className="build-panel-price">
+                  <span className="label">Ціна</span>
+                  <span className="amount mono">{psuData.price.toLocaleString('uk-UA')} ₴</span>
                 </div>
               </>
             ) : activePanel === 'cpu' && cpuData ? (
