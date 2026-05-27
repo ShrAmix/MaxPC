@@ -278,6 +278,16 @@
 }
 .build-controls button:hover { color: var(--text); background: rgba(255,255,255,0.04); }
 .build-controls button.active { color: var(--red); border-color: var(--red-line); background: var(--red-soft); }
+.build-controls button svg { vertical-align: middle; margin-top: -2px; }
+
+.ph-hint-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+}
+.ph-hint-row svg { opacity: 0.6; flex-shrink: 0; }
 
 /* The case stage */
 .pc-stage {
@@ -598,8 +608,8 @@
 }
 .build-rotate-hint {
   position: absolute;
-  top: 20px;
-  right: 22px;
+  bottom: 18px;
+  left: 18px;
   display: flex;
   align-items: center;
   gap: 6px;

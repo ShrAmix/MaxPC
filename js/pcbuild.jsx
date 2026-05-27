@@ -73,15 +73,15 @@ function buildScene(threeRef) {
   camera.lookAt(0, 0, 0);
 
   // ── Lights ──
-  scene.add(new THREE.AmbientLight(0x111118, 2.8));
+  scene.add(new THREE.AmbientLight(0x1a1a22, 4.2));
 
-  const keyLight = new THREE.DirectionalLight(0xffffff, 1.8);
+  const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
   keyLight.position.set(-300, 600, 500);
   keyLight.castShadow = true;
   scene.add(keyLight);
 
   // Fill from right
-  const fillLight = new THREE.DirectionalLight(0x1a1a2e, 0.8);
+  const fillLight = new THREE.DirectionalLight(0x4466aa, 1.2);
   fillLight.position.set(400, 200, 300);
   scene.add(fillLight);
 
@@ -1780,12 +1780,18 @@ function PCBuild() {
             <div className="br-tr"></div><div className="br-bl"></div>
             <div className="build-toolbar">
               <span>◢ GameMax Spark Air · Mini-Tower</span>
-              <span className="live">SCAN ACTIVE</span>
+              <span className="live">СКАН АКТИВНИЙ</span>
             </div>
             <div className="build-controls">
-              <button onClick={resetCamera}>↺ Reset</button>
+              <button onClick={resetCamera} title="Скинути камеру">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.36 2.64L3 8"/><path d="M3 3v5h5"/></svg>
+                {' '}Скинути
+              </button>
               <button onClick={toggleExplode} style={{ marginLeft: 8 }}>
-                {exploded ? '⬛ Закрити' : '⬜ Розкрити'}
+                {exploded
+                  ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>{' '}Зібрати</>
+                  : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>{' '}Розкрити</>
+                }
               </button>
             </div>
             <div className="build-rotate-hint">
@@ -1982,9 +1988,19 @@ function PCBuild() {
                 <div className="ph-mark">◢</div>
                 <div className="ph-h">Інтерактивна модель</div>
                 <div className="ph-p">
-                  Клікни на <strong>ручку</strong> — корпус.<br/>
-                  Клікни на <strong>материнську плату</strong> або <strong>процесор</strong> — характеристики.<br /><br />
-                  <strong>Drag</strong> — крути · <strong>Scroll</strong> — zoom.
+                  Клікни на будь-яку деталь — побачиш характеристики та ціну.<br /><br />
+                  <span className="ph-hint-row">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                    {' '}<strong>Затисни та тягни</strong> — обертай модель
+                  </span><br/>
+                  <span className="ph-hint-row">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M5 9l7-7 7 7"/></svg>
+                    {' '}<strong>Scroll</strong> — наближення / віддалення
+                  </span><br/>
+                  <span className="ph-hint-row">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    {' '}<strong>Розкрити</strong> — подивись що всередині
+                  </span>
                 </div>
               </div>
             )}
