@@ -61,6 +61,7 @@ function buildScene(threeRef) {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.1;
+  renderer.sortObjects = true; // прозорі рендеряться після непрозорих за renderOrder
 
   const scene = new THREE.Scene();
 
@@ -116,9 +117,10 @@ function buildScene(threeRef) {
     roughness: 0.04,
     metalness: 0.05,
     transparent: true,
-    opacity: 0.55,
-    side: THREE.DoubleSide,
+    opacity: 0.52,
+    side: THREE.FrontSide,
     depthWrite: false,
+    depthTest: true,
   });
 
   // Glass frame (black border around glass)
@@ -199,7 +201,7 @@ function buildScene(threeRef) {
   const glassMesh = new THREE.Mesh(new THREE.PlaneGeometry(glassW, glassH), matGlass);
   glassMesh.rotation.y = -Math.PI / 2;
   glassMesh.position.set(T/2 + 0.5, H/2, D/2);
-  glassMesh.renderOrder = 2;
+  glassMesh.renderOrder = 10;
   glassGroup.add(glassMesh);
   bodyMeshes.push(glassMesh);
 
@@ -210,7 +212,7 @@ function buildScene(threeRef) {
   const glare = new THREE.Mesh(new THREE.PlaneGeometry(glassW * 0.18, glassH * 0.8), glareMat);
   glare.rotation.set(0, -Math.PI / 2, 0.3);
   glare.position.set(T/2 + 1, H * 0.55, D * 0.28);
-  glare.renderOrder = 3;
+  glare.renderOrder = 11;
   glassGroup.add(glare);
 
   // ── Mesh (perforated) overlays ──
@@ -416,10 +418,12 @@ function buildScene(threeRef) {
   //         oy=0 → низ плати,                   oy=MB → верх
   // ── Motherboard: Gigabyte B550M Aorus Elite (mATX 244×244mm) ──
   // ── НАЛАШТУВАННЯ ЗМІЩЕННЯ МАТЕРИНКИ ──
-  const EXPLODE_MOBO = 120; // вліво (до скла) при розкритті
+ const EXPLODE_MOBO = 120; // вліво (до скла) при розкритті
+  const EXPLODE_SSD = 160;  // Трішки менше ніж CPU (який на 180)
 
   const moboGroup = new THREE.Group();
-  caseGroup.add(moboGroup);
+  const ssdGroup = new THREE.Group();
+  caseGroup.add(moboGroup, ssdGroup);
 
   const MB  = 220;        // розмір плати (мм)
   const mpX = W - T - 4;  // X поверхні PCB
@@ -534,6 +538,126 @@ function buildScene(threeRef) {
 
   // ══ I/O ПАНЕЛЬ (роз'єми на задній стінці) ══
   mb(ms(0x0a0a0a, 0.5, 0.2), 12, 35, 72, 110, -5); // заглушка портів всередині кожуха
+// ── SSD: Samsung PM981 512GB (Верхній слот M.2) ──
+  // Слот знаходиться на oy=105, oz=30. Довжина слота 75. 
+  // Центр слота по Y: mpY + 105 + 18/2 = mpY + 114
+  // Центр слота по Z: mpZ + 30 + 75/2 = mpZ + 67.5
+  const ssdW = 1.5; // товщина текстоліту
+  const ssdH = 22;  // ширина M.2 2280
+  const ssdD = 80;  // довжина M.2 2280
+  const ssdX = mpX - 7; // Трохи вище за материнку
+  const ssdY = mpY + 70; 
+  const ssdZ = mpZ + 88.5;
+
+  // 1. Зелений текстоліт (PCB)
+  const ssdPCB = new THREE.Mesh(
+    new THREE.BoxGeometry(ssdW, ssdH, ssdD),
+    new THREE.MeshStandardMaterial({ color: 0x1d592b, roughness: 0.9, metalness: 0.1, emissive: 0x000000 })
+  );
+  ssdPCB.position.set(ssdX, ssdY, ssdZ);
+  ssdPCB.castShadow = true;
+  ssdGroup.add(ssdPCB);
+
+  // 2. Чіпи пам'яті та контролер (чорні блоки)
+  const chipMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.4, metalness: 0.2, emissive: 0x000000 });
+  
+  // Контролер (менший чіп зліва)
+  const ctrlMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 14, 14), chipMat);
+  ctrlMesh.position.set(ssdX - 1, ssdY, ssdZ - 25);
+  ssdGroup.add(ctrlMesh);
+  
+  // Чіпи пам'яті (більші)
+  const flash1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 18, 20), chipMat);
+  flash1.position.set(ssdX - 1, ssdY, ssdZ + 5);
+  ssdGroup.add(flash1);
+  const flash2 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 18, 20), chipMat);
+  flash2.position.set(ssdX - 1, ssdY, ssdZ + 27);
+  ssdGroup.add(flash2);
+
+  // 3. Біла наклейка "Samsung PM981"
+  const lblCanvas = document.createElement('canvas');
+  lblCanvas.width = 256; lblCanvas.height = 64;
+  const ctxL = lblCanvas.getContext('2d');
+  ctxL.fillStyle = '#f0f0f0';
+  ctxL.fillRect(0, 0, 256, 64);
+  
+  // Текст на наклейці
+  ctxL.fillStyle = '#111';
+  ctxL.font = 'bold 12px Arial';
+  ctxL.fillText('SAMSUNG', 10, 16);
+  ctxL.font = '10px Arial';
+  ctxL.fillText('Model: MZ-VLB5120', 10, 30);
+  ctxL.fillText('PM981 NVMe 512GB', 10, 42);
+  
+  // Імітація штрих-коду
+  ctxL.fillRect(120, 10, 100, 20);
+  ctxL.fillStyle = '#f0f0f0';
+  for(let i = 122; i < 220; i += 4) {
+    ctxL.fillRect(i, 10, Math.random() * 2 + 1, 20);
+  }
+
+  const lblMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(ssdD - 12, ssdH - 2),
+    new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(lblCanvas), roughness: 0.7 })
+  );
+  // Розвертаємо наклейку лицем до скла та вздовж планки
+  lblMesh.rotation.y = -Math.PI / 2;
+  lblMesh.position.set(ssdX - 1.7, ssdY, ssdZ + 5);
+  ssdGroup.add(lblMesh);
+  // ── SSD 2: Kingston NV3 1TB (Нижній слот M.2, під GPU) ──
+  const EXPLODE_SSD2 = 160;
+  const ssd2Group = new THREE.Group();
+  caseGroup.add(ssd2Group);
+
+  const ssd2X = mpX - 7;
+  const ssd2Y = mpY + 25;
+  const ssd2Z = mpZ + 88.5;
+
+  // 1. Синій текстоліт (PCB)
+  const ssd2PCB = new THREE.Mesh(
+    new THREE.BoxGeometry(1.5, 22, 80),
+    new THREE.MeshStandardMaterial({ color: 0x112266, roughness: 0.8, metalness: 0.2, emissive: 0x000000 })
+  );
+  ssd2PCB.position.set(ssd2X, ssd2Y, ssd2Z);
+  ssd2PCB.castShadow = true;
+  ssd2Group.add(ssd2PCB);
+
+  // 2. Чіпи пам'яті
+  const chipMat2 = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.4, metalness: 0.2, emissive: 0x000000 });
+  const ssd2f1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 16, 22), chipMat2);
+  ssd2f1.position.set(ssd2X - 1, ssd2Y, ssd2Z - 15);
+  ssd2Group.add(ssd2f1);
+  const ssd2f2 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 16, 22), chipMat2.clone());
+  ssd2f2.position.set(ssd2X - 1, ssd2Y, ssd2Z + 15);
+  ssd2Group.add(ssd2f2);
+
+  // 3. Біла наклейка "Kingston NV3"
+  const lblCanvas2 = document.createElement('canvas');
+  lblCanvas2.width = 256; lblCanvas2.height = 64;
+  const ctx2 = lblCanvas2.getContext('2d');
+  ctx2.fillStyle = '#ffffff';
+  ctx2.fillRect(0, 0, 256, 64);
+  ctx2.fillStyle = '#111111';
+  ctx2.font = 'bold 18px Arial';
+  ctx2.fillText('Kingston', 10, 22);
+  ctx2.fillStyle = '#2b44aa';
+  ctx2.beginPath(); ctx2.arc(96, 16, 9, 0, Math.PI * 2); ctx2.fill();
+  ctx2.fillStyle = '#111111';
+  ctx2.font = 'bold 22px Arial';
+  ctx2.textAlign = 'right';
+  ctx2.fillText('1TB', 245, 24);
+  ctx2.textAlign = 'left';
+  ctx2.font = 'bold 20px Arial';
+  ctx2.fillText('NV3', 10, 50);
+  ctx2.font = '10px Arial';
+  ctx2.fillText('PCIe 4.0 NVMe M.2 2280', 55, 58);
+  const lblMesh2 = new THREE.Mesh(
+    new THREE.PlaneGeometry(70, 20),
+    new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(lblCanvas2), roughness: 0.6 })
+  );
+  lblMesh2.rotation.y = -Math.PI / 2;
+  lblMesh2.position.set(ssd2X - 1.7, ssd2Y, ssd2Z);
+  ssd2Group.add(lblMesh2);
 
   // ── RAM: Kingston FURY Beast 32GB DDR4 (2×16GB у слотах 1 і 3) ──
   const EXPLODE_RAM = 150; // вліво (між материнкою і процесором)
@@ -900,15 +1024,102 @@ function buildScene(threeRef) {
   floorGlow.position.set(0, -H / 2 - 16, 0);
   scene.add(floorGlow);
 
+  // ── Корпусні вентилятори: Arctic F12 PWM PST ──
+  // Задній виїжджає по -X разом з caseFansGroup (як CPU).
+  // Передній прикріплений до frontGroup — виїжджає по +Z разом з передньою панеллю.
+  const EXPLODE_FANS = 170;
+  const caseFansGroup = new THREE.Group(); // задній
+  caseGroup.add(caseFansGroup);
+
+  const createArcticFan = (parent, px, py, pz, rotX, rotY, rotZ) => {
+    const fanGroup = new THREE.Group();
+    fanGroup.position.set(px, py, pz);
+    fanGroup.rotation.set(rotX, rotY, rotZ);
+    parent.add(fanGroup);
+
+    const fSize = 120;
+    const fDepth = 25;
+
+    const frameShape = new THREE.Shape();
+    const hs = fSize / 2;
+    const cr = 6;
+    frameShape.moveTo(-hs+cr, -hs); frameShape.lineTo(hs-cr, -hs); frameShape.lineTo(hs, -hs+cr);
+    frameShape.lineTo(hs, hs-cr); frameShape.lineTo(hs-cr, hs); frameShape.lineTo(-hs+cr, hs);
+    frameShape.lineTo(-hs, hs-cr); frameShape.lineTo(-hs, -hs+cr); frameShape.closePath();
+    const hole = new THREE.Path();
+    hole.absarc(0, 0, fSize/2 - 2, 0, Math.PI * 2, false);
+    frameShape.holes.push(hole);
+
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x161618, roughness: 0.8, metalness: 0.1, emissive: 0x000000 });
+    const frame = new THREE.Mesh(new THREE.ExtrudeGeometry(frameShape, { depth: fDepth, bevelEnabled: false }), frameMat);
+    frame.position.set(0, 0, -fDepth/2);
+    frame.castShadow = true;
+    fanGroup.add(frame);
+
+    const lCanvas = document.createElement('canvas');
+    lCanvas.width = 256; lCanvas.height = 256;
+    const ctx = lCanvas.getContext('2d');
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(128, 128, 128, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(128, 128, 120, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 36px Arial'; ctx.textAlign = 'center'; ctx.fillText('ARCTIC', 128, 185);
+    ctx.beginPath();
+    ctx.moveTo(128, 60); ctx.lineTo(75, 140); ctx.lineTo(100, 140);
+    ctx.lineTo(128, 100); ctx.lineTo(156, 140); ctx.lineTo(181, 140);
+    ctx.closePath(); ctx.fill();
+
+    const hubMat  = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.6, emissive: 0x000000 });
+    const logoMat = new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(lCanvas), roughness: 0.5 });
+
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(21, 21, fDepth - 2, 32), hubMat);
+    hub.rotation.x = Math.PI / 2;
+    fanGroup.add(hub);
+
+    const logoPlane = new THREE.Mesh(new THREE.CircleGeometry(20, 32), logoMat);
+    logoPlane.position.set(0, 0, fDepth/2 - 0.5);
+    fanGroup.add(logoPlane);
+
+    const bladeMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.5, metalness: 0.3, emissive: 0x000000 });
+    for (let i = 0; i < 9; i++) {
+      const angle = (i / 9) * Math.PI * 2;
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(44, 1.5, 16), bladeMat);
+      blade.position.set(Math.cos(angle) * 37, Math.sin(angle) * 37, 0);
+      blade.rotation.order = 'ZYX';
+      blade.rotation.z = angle + Math.PI/4.5;
+      blade.rotation.x = Math.PI / 3.5;
+      blade.castShadow = true;
+      fanGroup.add(blade);
+    }
+
+    const strutMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, emissive: 0x000000 });
+    for (let i = 0; i < 4; i++) {
+      const angle = (i / 4) * Math.PI * 2 + Math.PI/4;
+      const strut = new THREE.Mesh(new THREE.BoxGeometry(60, 4, 3), strutMat);
+      strut.position.set(Math.cos(angle)*30, Math.sin(angle)*30, -fDepth/2 + 1.5);
+      strut.rotation.z = angle;
+      fanGroup.add(strut);
+    }
+
+    return fanGroup;
+  };
+
+  // Задній — біля задньої стінки, лицем всередину корпусу
+  // Задній — біля задньої стінки (Z близьке до 0, на скріні це ліва сторона)
+  const fanRearGroup  = createArcticFan(caseFansGroup, W * 0.73, H * 0.72, T + 12.5, 0, 0, 0);
+
+  // Передній вентилятор — прикріплений до frontGroup, позиція відносно неї
+  // Z = D - T - 12.5 (всередину від передньої панелі), rotation.y = PI (лицем всередину)
+  const fanFrontGroup = createArcticFan(frontGroup, W / 2, 70, D - T - 12.5, 0, Math.PI, 0);
+  
   threeRef.current = {
     ...threeRef.current,
     scene, camera, renderer, spotLight, bodyMeshes, handleMeshes, hddLed,
-    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup, ramGroup,
-    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM,
+    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup, ramGroup, ssdGroup, ssd2Group, caseFansGroup, fanRearGroup, fanFrontGroup,
+    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM, EXPLODE_SSD, EXPLODE_SSD2, EXPLODE_FANS,
   };
   return { scene, camera, renderer, spotLight, bodyMeshes, handleMeshes, hddLed,
-    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup, ramGroup,
-    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM };
+    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup, ramGroup, ssdGroup, ssd2Group, caseFansGroup, fanRearGroup, fanFrontGroup,
+    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM, EXPLODE_SSD, EXPLODE_SSD2, EXPLODE_FANS };
 }
 
 // ── Component ────────────────────────────────────────────────────────
@@ -932,14 +1143,23 @@ function PCBuild() {
   const [coolerHover,  setCoolerHover]  = useState(false);
   const [ramPinned,    setRamPinned]    = useState(false);
   const [ramHover,     setRamHover]     = useState(false);
+  const [ssdPinned,    setSsdPinned]    = useState(false);
+  const [ssd2Pinned,   setSsd2Pinned]   = useState(false);
+  const [ssd2Hover,    setSsd2Hover]    = useState(false);
+  const [ssdHover,     setSsdHover]     = useState(false);
+  const [fanPinned,    setFanPinned]    = useState(false);
+  const [fanHover,     setFanHover]     = useState(false);
   const handleActive = handleHover || handlePinned;
   const moboActive   = moboHover   || moboPinned;
   const cpuActive    = cpuHover    || cpuPinned;
   const timActive    = timHover    || timPinned;
   const coolerActive = coolerHover || coolerPinned;
   const ramActive    = ramHover    || ramPinned;
+  const ssdActive    = ssdHover    || ssdPinned;
+  const ssd2Active   = ssd2Hover   || ssd2Pinned;
+  const fanActive    = fanHover    || fanPinned;
 
-  const activePanel = ramActive ? 'ram' : coolerActive ? 'cooler' : timActive ? 'tim' : cpuActive ? 'cpu' : moboActive ? 'mobo' : handleActive ? 'case' : null;
+  const activePanel = fanActive ? 'fan' : ssdActive ? 'ssd' : ssd2Active ? 'ssd2' : ramActive ? 'ram' : coolerActive ? 'cooler' : timActive ? 'tim' : cpuActive ? 'cpu' : moboActive ? 'mobo' : handleActive ? 'case' : null;
 
   const caseData   = window.BUILD_DATA?.parts?.find(p => p.id === 'case');
   const moboData   = window.BUILD_DATA?.parts?.find(p => p.id === 'mobo');
@@ -947,6 +1167,21 @@ function PCBuild() {
   const timData    = window.BUILD_DATA?.parts?.find(p => p.id === 'tim');
   const coolerData = window.BUILD_DATA?.parts?.find(p => p.id === 'cooler');
   const ramData    = window.BUILD_DATA?.parts?.find(p => p.id === 'ram');
+  const ssdData    = window.BUILD_DATA?.parts?.find(p => p.id === 'ssd1') || {
+    name: 'Samsung PM981', model: '512 GB · NVMe M.2', cat: 'SSD #1 — система', price: 2700,
+    desc: 'Швидкий NVMe під систему та основні програми. Boot за 8 секунд, гра запускається ще до того, як встигнеш узяти миш.',
+    specs: [["Об'єм", '512 GB'], ['Інтерфейс', 'PCIe 3.0 x4'], ['Форм-фактор', 'M.2 2280'], ['Read', 'до 3500 MB/s'], ['Write', 'до 2300 MB/s']],
+  };
+  const fanData    = window.BUILD_DATA?.parts?.find(p => p.id === 'fan') || {
+    name: 'Arctic F12 PWM PST', model: 'ACFAN00200A · 120mm · 2 шт', cat: 'Вентилятори корпусу', price: 558,
+    desc: 'Два тихих 120мм вентилятора з PWM і PST синхронізацією. Один знизу на вдув, один ззаду на видув.',
+    specs: [['Розмір', '120×120×25 мм'], ['Швидкість', '200–1800 RPM'], ['Роз\'єм', '4-pin PWM'], ['Шум', '0.3 Sone'], ['Статичний тиск', '1.85 mmH₂O'], ['Кількість', '2 шт']],
+  };
+  const ssd2Data   = window.BUILD_DATA?.parts?.find(p => p.id === 'ssd2') || {
+    name: 'Kingston NV3', model: '1TB · NVMe M.2 PCIe 4.0', cat: 'SSD #2 — ігри', price: 3300,
+    desc: 'Терабайт PCIe 4.0 NVMe під ігрову бібліотеку. Cyberpunk, GOW, Forza — нехай ставляться всі одразу і завантажуються за секунди.',
+    specs: [["Об'єм", '1 TB'], ['Інтерфейс', 'PCIe 4.0 x4 NVMe'], ['Форм-фактор', 'M.2 2280'], ['NAND', '3D NAND'], ['Модель', 'SNV3S/1000G']],
+  };
 
   // Sync handle emissive
   useEffect(() => {
@@ -963,8 +1198,9 @@ function PCBuild() {
     const { coolerGroup } = threeRef.current;
     if (!coolerGroup) return;
     coolerGroup.traverse(m => {
-      if (!m.isMesh || !m.material) return;
-      m.material.emissive = new THREE.Color(coolerActive ? 0x0033cc : 0x000000);
+      if (!m.isMesh || !m.material || !m.material.isMeshStandardMaterial) return;
+      if (!m.material.emissive) m.material.emissive = new THREE.Color(0x000000);
+      m.material.emissive.set(coolerActive ? 0x0033cc : 0x000000);
       m.material.emissiveIntensity = coolerActive ? 0.35 : 0;
     });
   }, [coolerActive]);
@@ -1012,6 +1248,43 @@ function PCBuild() {
       m.material.emissiveIntensity = ramActive ? 0.4 : 0;
     });
   }, [ramActive]);
+  // Sync ssd emissive
+  useEffect(() => {
+    const { ssdGroup } = threeRef.current;
+    if (!ssdGroup) return;
+    ssdGroup.traverse(m => {
+      if (!m.isMesh || !m.material || !m.material.isMeshStandardMaterial) return;
+      if (!m.material.emissive) m.material.emissive = new THREE.Color(0x000000);
+      m.material.emissive.set(ssdActive ? 0x0033cc : 0x000000);
+      m.material.emissiveIntensity = ssdActive ? 0.5 : 0;
+    });
+  }, [ssdActive]);
+
+  // Sync ssd2 emissive
+  useEffect(() => {
+    const { ssd2Group } = threeRef.current;
+    if (!ssd2Group) return;
+    ssd2Group.traverse(m => {
+      if (!m.isMesh || !m.material || !m.material.isMeshStandardMaterial) return;
+      if (!m.material.emissive) m.material.emissive = new THREE.Color(0x000000);
+      m.material.emissive.set(ssd2Active ? 0x0033cc : 0x000000);
+      m.material.emissiveIntensity = ssd2Active ? 0.5 : 0;
+    });
+  }, [ssd2Active]);
+
+  // Sync fans emissive (обидва вентилятори разом)
+  useEffect(() => {
+    const { fanRearGroup, fanFrontGroup } = threeRef.current;
+    [fanRearGroup, fanFrontGroup].forEach(g => {
+      if (!g) return;
+      g.traverse(m => {
+        if (!m.isMesh || !m.material || !m.material.isMeshStandardMaterial) return;
+        if (!m.material.emissive) m.material.emissive = new THREE.Color(0x000000);
+        m.material.emissive.set(fanActive ? 0x0033cc : 0x000000);
+        m.material.emissiveIntensity = fanActive ? 0.45 : 0;
+      });
+    });
+  }, [fanActive]);
 
   // Three.js init
   useEffect(() => {
@@ -1065,24 +1338,34 @@ function PCBuild() {
         hoverRef.current = nowHover;
         setHandleHover(nowHover);
       }
-      // RAM → Cooler → TIM → CPU → Mobo (пріоритет)
-      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg, ramGroup: rg } = threeRef.current;
-      const rHits = rg ? raycaster.intersectObjects(rg.children, true) : [];
-      const hitsRam = rHits.length > 0;
-      const clHits = (!hitsRam && clg) ? raycaster.intersectObjects(clg.children, true) : [];
+      // Fan → RAM → Cooler → TIM → CPU → SSD → SSD2 → Mobo (пріоритет)
+      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg, ramGroup: rg, ssdGroup: sg, ssd2Group: sg2, fanRearGroup: frg, fanFrontGroup: ffg } = threeRef.current;
+      // вентилятори: перевіряємо обидва, але результат один стан
+      const fanAllChildren = [...(frg ? frg.children : []), ...(ffg ? ffg.children : [])];
+      const hitsFan  = fanAllChildren.length > 0 && raycaster.intersectObjects(fanAllChildren, true).length > 0;
+      const rHits    = (!hitsFan && rg)  ? raycaster.intersectObjects(rg.children,  true) : [];
+      const hitsRam  = rHits.length > 0;
+      const clHits   = (!hitsFan && !hitsRam && clg) ? raycaster.intersectObjects(clg.children, true) : [];
       const hitsCooler = clHits.length > 0;
-      const tHits = (!hitsRam && !hitsCooler && tg) ? raycaster.intersectObjects(tg.children, true) : [];
-      const hitsTim = tHits.length > 0;
-      const cHits = (!hitsRam && !hitsCooler && !hitsTim && cg) ? raycaster.intersectObjects(cg.children, true) : [];
-      const hitsCpu = cHits.length > 0;
-      const mHits = (!hitsRam && !hitsCooler && !hitsTim && !hitsCpu && mg) ? raycaster.intersectObjects(mg.children, true) : [];
+      const tHits    = (!hitsFan && !hitsRam && !hitsCooler && tg) ? raycaster.intersectObjects(tg.children, true) : [];
+      const hitsTim  = tHits.length > 0;
+      const cHits    = (!hitsFan && !hitsRam && !hitsCooler && !hitsTim && cg) ? raycaster.intersectObjects(cg.children, true) : [];
+      const hitsCpu  = cHits.length > 0;
+      const sHits    = (!hitsFan && !hitsRam && !hitsCooler && !hitsTim && !hitsCpu && sg)  ? raycaster.intersectObjects(sg.children,  true) : [];
+      const hitsSsd  = sHits.length > 0;
+      const s2Hits   = (!hitsFan && !hitsRam && !hitsCooler && !hitsTim && !hitsCpu && !hitsSsd && sg2) ? raycaster.intersectObjects(sg2.children, true) : [];
+      const hitsSsd2 = s2Hits.length > 0;
+      const mHits    = (!hitsFan && !hitsRam && !hitsCooler && !hitsTim && !hitsCpu && !hitsSsd && !hitsSsd2 && mg) ? raycaster.intersectObjects(mg.children, true) : [];
       const hitsMobo = mHits.length > 0;
+      setFanHover(hitsFan);
       setRamHover(hitsRam);
       setCoolerHover(hitsCooler);
       setTimHover(hitsTim);
       setCpuHover(hitsCpu);
+      setSsdHover(hitsSsd);
+      setSsd2Hover(hitsSsd2);
       setMoboHover(hitsMobo);
-      renderer.domElement.style.cursor = (nowHover || hitsRam || hitsCooler || hitsTim || hitsCpu || hitsMobo) ? 'pointer' : 'grab';
+      renderer.domElement.style.cursor = (nowHover || hitsFan || hitsRam || hitsCooler || hitsTim || hitsCpu || hitsSsd || hitsSsd2 || hitsMobo) ? 'pointer' : 'grab';
     };
     const onMouseLeave = () => { spotLight.intensity = 0; };
 
@@ -1094,18 +1377,25 @@ function PCBuild() {
       getNDC(e);
       raycaster.setFromCamera(ndcMouse, camera);
       const hitHandle = raycaster.intersectObjects(handleMeshes, false).length > 0;
-      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg, ramGroup: rg } = threeRef.current;
-      const hitRam    = rg ? raycaster.intersectObjects(rg.children, true).length > 0 : false;
-      const hitCooler = !hitRam && clg ? raycaster.intersectObjects(clg.children, true).length > 0 : false;
-      const hitTim    = !hitRam && !hitCooler && tg  ? raycaster.intersectObjects(tg.children,  true).length > 0 : false;
-      const hitCpu    = !hitRam && !hitCooler && !hitTim && cg ? raycaster.intersectObjects(cg.children, true).length > 0 : false;
-      const hitMobo   = !hitRam && !hitCooler && !hitTim && !hitCpu && mg ? raycaster.intersectObjects(mg.children, true).length > 0 : false;
-      const reset = () => { setHandlePinned(false); setMoboPinned(false); setCpuPinned(false); setTimPinned(false); setCoolerPinned(false); setRamPinned(false); };
+      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg, ramGroup: rg, ssdGroup: sg, ssd2Group: sg2, fanRearGroup: frg, fanFrontGroup: ffg } = threeRef.current;
+      const fanAll  = [...(frg ? frg.children : []), ...(ffg ? ffg.children : [])];
+      const hitFan  = fanAll.length > 0 && raycaster.intersectObjects(fanAll, true).length > 0;
+      const hitRam    = !hitFan && rg  ? raycaster.intersectObjects(rg.children,  true).length > 0 : false;
+      const hitCooler = !hitFan && !hitRam && clg ? raycaster.intersectObjects(clg.children, true).length > 0 : false;
+      const hitTim    = !hitFan && !hitRam && !hitCooler && tg  ? raycaster.intersectObjects(tg.children,  true).length > 0 : false;
+      const hitCpu    = !hitFan && !hitRam && !hitCooler && !hitTim && cg  ? raycaster.intersectObjects(cg.children,  true).length > 0 : false;
+      const hitSsd    = !hitFan && !hitRam && !hitCooler && !hitTim && !hitCpu && sg  ? raycaster.intersectObjects(sg.children,  true).length > 0 : false;
+      const hitSsd2   = !hitFan && !hitRam && !hitCooler && !hitTim && !hitCpu && !hitSsd && sg2 ? raycaster.intersectObjects(sg2.children, true).length > 0 : false;
+      const hitMobo   = !hitFan && !hitRam && !hitCooler && !hitTim && !hitCpu && !hitSsd && !hitSsd2 && mg ? raycaster.intersectObjects(mg.children, true).length > 0 : false;
+      const reset = () => { setHandlePinned(false); setMoboPinned(false); setCpuPinned(false); setTimPinned(false); setCoolerPinned(false); setRamPinned(false); setSsdPinned(false); setSsd2Pinned(false); setFanPinned(false); };
       if (hitHandle)      { reset(); setHandlePinned(v => !v); }
+      else if (hitFan)    { reset(); setFanPinned(v => !v); }
       else if (hitRam)    { reset(); setRamPinned(v => !v); }
       else if (hitCooler) { reset(); setCoolerPinned(v => !v); }
       else if (hitTim)    { reset(); setTimPinned(v => !v); }
       else if (hitCpu)    { reset(); setCpuPinned(v => !v); }
+      else if (hitSsd)    { reset(); setSsdPinned(v => !v); }
+      else if (hitSsd2)   { reset(); setSsd2Pinned(v => !v); }
       else if (hitMobo)   { reset(); setMoboPinned(v => !v); }
       else                { reset(); }
     };
@@ -1134,17 +1424,20 @@ function PCBuild() {
 
       // Плавна анімація розкриття (lerp до target)
       const target = explodeRef.current;
-      const { frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, coolerGroup, ramGroup,
-              EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM } = threeRef.current;
+      const { frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, coolerGroup, ramGroup, ssdGroup, ssd2Group, caseFansGroup, fanFrontGroup,
+              EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM, EXPLODE_SSD, EXPLODE_SSD2, EXPLODE_FANS } = threeRef.current;
       if (frontGroup && glassGroup && topGroup) {
-        frontGroup.position.z  += (target * EXPLODE_FRONT   - frontGroup.position.z)  * 0.08;
+        frontGroup.position.z  += (target * EXPLODE_FRONT    - frontGroup.position.z)  * 0.08;
         glassGroup.position.x  += (target * (-EXPLODE_GLASS) - glassGroup.position.x)  * 0.08;
-        topGroup.position.y    += (target * EXPLODE_TOP     - topGroup.position.y)    * 0.08;
-        if (moboGroup)   moboGroup.position.x   += (target * (-EXPLODE_MOBO)   - moboGroup.position.x)   * 0.08;
-        if (ramGroup)    ramGroup.position.x    += (target * (-EXPLODE_RAM)    - ramGroup.position.x)    * 0.08;
-        if (cpuGroup)    cpuGroup.position.x    += (target * (-EXPLODE_CPU)    - cpuGroup.position.x)    * 0.08;
-        if (timGroup)    timGroup.position.x    += (target * (-EXPLODE_TIM)    - timGroup.position.x)    * 0.08;
-        if (coolerGroup) coolerGroup.position.x += (target * (-EXPLODE_COOLER) - coolerGroup.position.x) * 0.08;
+        topGroup.position.y    += (target * EXPLODE_TOP      - topGroup.position.y)    * 0.08;
+        if (moboGroup)   moboGroup.position.x    += (target * (-EXPLODE_MOBO)   - moboGroup.position.x)   * 0.08;
+        if (ramGroup)    ramGroup.position.x     += (target * (-EXPLODE_RAM)    - ramGroup.position.x)    * 0.08;
+        if (cpuGroup)    cpuGroup.position.x     += (target * (-EXPLODE_CPU)    - cpuGroup.position.x)    * 0.08;
+        if (ssdGroup)    ssdGroup.position.x     += (target * (-EXPLODE_SSD)    - ssdGroup.position.x)    * 0.08;
+        if (ssd2Group)   ssd2Group.position.x    += (target * (-EXPLODE_SSD2)   - ssd2Group.position.x)   * 0.08;
+        if (timGroup)    timGroup.position.x     += (target * (-EXPLODE_TIM)    - timGroup.position.x)    * 0.08;
+        if (coolerGroup)   coolerGroup.position.x   += (target * (-EXPLODE_COOLER) - coolerGroup.position.x)   * 0.08;
+        if (caseFansGroup) caseFansGroup.position.x += (target * (-EXPLODE_FANS)   - caseFansGroup.position.x) * 0.08;
       }
 
       controls.update();
@@ -1228,10 +1521,13 @@ function PCBuild() {
                 : activePanel === 'tim'    && timData    ? timData.cat
                 : activePanel === 'cooler' && coolerData ? coolerData.cat
                 : activePanel === 'ram'    && ramData    ? ramData.cat
+                : activePanel === 'ssd'    && ssdData    ? ssdData.cat
+                : activePanel === 'ssd2'   && ssd2Data   ? ssd2Data.cat
+                : activePanel === 'fan'    && fanData    ? fanData.cat
                 : 'Клікни на деталь'}
               </span>
               {activePanel && <span className="label" style={{ color: 'var(--red)' }}>
-                {activePanel === 'case' ? '/01/' : activePanel === 'mobo' ? '/02/' : activePanel === 'cpu' ? '/03/' : activePanel === 'tim' ? '/04/' : activePanel === 'cooler' ? '/05/' : '/06/'}
+                {activePanel === 'case' ? '/01/' : activePanel === 'mobo' ? '/02/' : activePanel === 'cpu' ? '/03/' : activePanel === 'tim' ? '/04/' : activePanel === 'cooler' ? '/05/' : activePanel === 'ram' ? '/06/' : activePanel === 'ssd' ? '/07/' : activePanel === 'ssd2' ? '/08/' : activePanel === 'fan' ? '/09/' : ''}
               </span>}
             </div>
             {activePanel === 'case' && caseData ? (
@@ -1277,6 +1573,51 @@ function PCBuild() {
                 <div className="build-panel-price">
                   <span className="label">Ціна</span>
                   <span className="amount mono">{timData.price.toLocaleString('uk-UA')} ₴</span>
+                </div>
+              </>
+              ) : activePanel === 'ssd' && ssdData ? (
+              <>
+                <div className="build-panel-title">{ssdData.name}</div>
+                <div className="build-panel-sub">{ssdData.model}</div>
+                <p className="build-panel-desc">{ssdData.desc}</p>
+                <div className="build-panel-specs">
+                  {ssdData.specs.map(([k, v], i) => (
+                    <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
+                  ))}
+                </div>
+                <div className="build-panel-price">
+                  <span className="label">Ціна</span>
+                  <span className="amount mono">{ssdData.price.toLocaleString('uk-UA')} ₴</span>
+                </div>
+              </>
+            ) : activePanel === 'ssd2' && ssd2Data ? (
+              <>
+                <div className="build-panel-title">{ssd2Data.name}</div>
+                <div className="build-panel-sub">{ssd2Data.model}</div>
+                <p className="build-panel-desc">{ssd2Data.desc}</p>
+                <div className="build-panel-specs">
+                  {ssd2Data.specs.map(([k, v], i) => (
+                    <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
+                  ))}
+                </div>
+                <div className="build-panel-price">
+                  <span className="label">Ціна</span>
+                  <span className="amount mono">{ssd2Data.price.toLocaleString('uk-UA')} ₴</span>
+                </div>
+              </>
+            ) : activePanel === 'fan' && fanData ? (
+              <>
+                <div className="build-panel-title">{fanData.name}</div>
+                <div className="build-panel-sub">{fanData.model}</div>
+                <p className="build-panel-desc">{fanData.desc}</p>
+                <div className="build-panel-specs">
+                  {fanData.specs.map(([k, v], i) => (
+                    <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
+                  ))}
+                </div>
+                <div className="build-panel-price">
+                  <span className="label">Ціна</span>
+                  <span className="amount mono">{fanData.price.toLocaleString('uk-UA')} ₴</span>
                 </div>
               </>
             ) : activePanel === 'cpu' && cpuData ? (
