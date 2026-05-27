@@ -1105,7 +1105,7 @@ function buildScene(threeRef) {
 
   // Задній — біля задньої стінки, лицем всередину корпусу
   // Задній — біля задньої стінки (Z близьке до 0, на скріні це ліва сторона)
-  const fanRearGroup  = createArcticFan(caseFansGroup, W * 0.73, H * 0.72, T + 12.5, 0, 0, 0);
+  const fanRearGroup  = createArcticFan(caseFansGroup, W * 0.73 -50, H * 0.72, T + 12.5, 0, 0, 0);
 
   // Передній вентилятор — прикріплений до frontGroup, позиція відносно неї
   // Z = D - T - 12.5 (всередину від передньої панелі), rotation.y = PI (лицем всередину)
