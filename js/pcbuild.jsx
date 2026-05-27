@@ -422,10 +422,13 @@ function buildScene(threeRef) {
   const EXPLODE_SSD = 160;  // Трішки менше ніж CPU (який на 180)
   const EXPLODE_PSU = 80;   // Блок живлення відлітає вгору
 
+  const EXPLODE_GPU = 300;  // Відеокарта виїжджає вліво до скла
+
   const moboGroup = new THREE.Group();
   const ssdGroup = new THREE.Group();
   const psuGroup = new THREE.Group();
-  caseGroup.add(moboGroup, ssdGroup, psuGroup);
+  const gpuGroup = new THREE.Group();
+  caseGroup.add(moboGroup, ssdGroup, psuGroup, gpuGroup);
 
   const MB  = 220;        // розмір плати (мм)
   const mpX = W - T - 4;  // X поверхні PCB
@@ -1113,6 +1116,136 @@ function buildScene(threeRef) {
   // Z = D - T - 12.5 (всередину від передньої панелі), rotation.y = PI (лицем всередину)
   const fanFrontGroup = createArcticFan(frontGroup, W / 2, 70, D - T - 12.5, 0, Math.PI, 0);
   
+  // ── Відеокарта: NVIDIA GeForce RTX 4060 (Dual Fan) ──
+  const gpuL     = 220;
+  const gpuW     = 115;
+  const gpuThick = 42;
+
+  const gpuY = mpY + 78;
+  const gpuZ = mpZ + 15;
+  const gpuX = mpX - 6;
+
+  const gpuModel = new THREE.Group();
+  gpuModel.position.set(gpuX, gpuY, gpuZ);
+  gpuGroup.add(gpuModel);
+
+  // 1. Бекплейт
+  const backplate = new THREE.Mesh(
+    new THREE.BoxGeometry(gpuW, 3, gpuL),
+    new THREE.MeshStandardMaterial({ color: 0x111112, roughness: 0.5, metalness: 0.7 })
+  );
+  backplate.position.set(-gpuW / 2, 2.5, gpuL / 2);
+  backplate.castShadow = true;
+  gpuModel.add(backplate);
+
+
+  // 2. PCB
+  const gpuPCB = new THREE.Mesh(
+    new THREE.BoxGeometry(gpuW - 10, 2, gpuL - 30),
+    new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.9 })
+  );
+  gpuPCB.position.set(-gpuW / 2 + 5, 0, (gpuL - 30) / 2);
+  gpuModel.add(gpuPCB);
+
+  // Контакти PCIe
+  const gpuPins = new THREE.Mesh(
+    new THREE.BoxGeometry(2, 6, 80),
+    new THREE.MeshStandardMaterial({ color: 0xb8860b, roughness: 0.4, metalness: 0.8 })
+  );
+  gpuPins.position.set(4, -3, 45);
+  gpuModel.add(gpuPins);
+
+  // 3. Радіатор
+  const gpuHeatsink = new THREE.Mesh(
+    new THREE.BoxGeometry(gpuW - 15, 14, gpuL - 10),
+    new THREE.MeshStandardMaterial({ color: 0x1e1e22, roughness: 0.4, metalness: 0.75 })
+  );
+  gpuHeatsink.position.set(-gpuW / 2 + 5, -9, gpuL / 2);
+  gpuModel.add(gpuHeatsink);
+
+  // 4. Кожух (Shroud)
+  const gpuShroud = new THREE.Mesh(
+    new THREE.BoxGeometry(gpuW, 20, gpuL),
+    new THREE.MeshStandardMaterial({ color: 0x0c0c0e, roughness: 0.7, metalness: 0.2 })
+  );
+  gpuShroud.position.set(-gpuW / 2, -26, gpuL / 2);
+  gpuShroud.castShadow = true;
+  gpuModel.add(gpuShroud);
+
+
+  // 5. Логотип "GEFORCE RTX" збоку (сріблястий, світиться)
+  const gpuLogoCanv = document.createElement('canvas');
+  gpuLogoCanv.width = 512; gpuLogoCanv.height = 64;
+  const ctxGpuLogo = gpuLogoCanv.getContext('2d');
+  ctxGpuLogo.fillStyle = '#0c0c0e'; ctxGpuLogo.fillRect(0, 0, 512, 64);
+  ctxGpuLogo.fillStyle = '#cccccc';
+  ctxGpuLogo.font = 'bold 34px Arial'; ctxGpuLogo.textAlign = 'center';
+  ctxGpuLogo.fillText('GEFORCE RTX  4060', 256, 44);
+  const gpuSideLogo = new THREE.Mesh(
+    new THREE.PlaneGeometry(gpuL - 20, 14),
+    new THREE.MeshStandardMaterial({
+      map: new THREE.CanvasTexture(gpuLogoCanv),
+      emissive: new THREE.Color(0xaaaaaa), emissiveIntensity: 0.5,
+    })
+  );
+  gpuSideLogo.rotation.y = -Math.PI / 2;
+  gpuSideLogo.position.set(-gpuW + 0.5, -14, gpuL / 2);
+  gpuModel.add(gpuSideLogo);
+
+  // 6. 8-pin роз'єм живлення
+  const gpuPwrPort = new THREE.Mesh(
+    new THREE.BoxGeometry(8, 10, 18),
+    new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 })
+  );
+  gpuPwrPort.position.set(-gpuW + 5, 3, gpuL - 20);
+  gpuModel.add(gpuPwrPort);
+
+  const gpuPwrCable = new THREE.Mesh(
+    new THREE.CylinderGeometry(4, 4, 55, 8),
+    new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.9 })
+  );
+  gpuPwrCable.position.set(-gpuW + 12, -28, gpuL - 20);
+  gpuPwrCable.rotation.z = Math.PI / 6;
+  gpuModel.add(gpuPwrCable);
+
+  // 7. Два вентилятори знизу
+  [gpuL * 0.28, gpuL * 0.72].forEach(zOff => {
+    const gpuFanHole = new THREE.Mesh(
+      new THREE.CylinderGeometry(40, 40, 22, 32),
+      new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.9 })
+    );
+    gpuFanHole.position.set(-gpuW / 2, -26, zOff);
+    gpuModel.add(gpuFanHole);
+
+    const gpuFanHub = new THREE.Mesh(
+      new THREE.CylinderGeometry(13, 13, 4, 24),
+      new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.6 })
+    );
+    gpuFanHub.position.set(-gpuW / 2, -37, zOff);
+    gpuModel.add(gpuFanHub);
+
+    for (let i = 0; i < 11; i++) {
+      const angle = (i / 11) * Math.PI * 2;
+      const gpuBlade = new THREE.Mesh(
+        new THREE.BoxGeometry(26, 1.2, 10),
+        new THREE.MeshStandardMaterial({ color: 0x1e1e22, roughness: 0.4 })
+      );
+      gpuBlade.position.set(-gpuW / 2 + Math.cos(angle) * 24, -37, zOff + Math.sin(angle) * 24);
+      gpuBlade.rotation.order = 'YXZ';
+      gpuBlade.rotation.y = -angle;
+      gpuBlade.rotation.x = Math.PI / 6;
+      gpuModel.add(gpuBlade);
+    }
+  });
+
+  // 8. Планка кріплення PCIe
+  const gpuBracket = new THREE.Mesh(
+    new THREE.BoxGeometry(18, gpuThick, 2),
+    new THREE.MeshStandardMaterial({ color: 0xbbbbbb, roughness: 0.3, metalness: 0.9 })
+  );
+  gpuBracket.position.set(-10, -gpuThick / 2 + 2, -1);
+  gpuModel.add(gpuBracket);
+
   // ── Блок живлення: MSI MAG A550BN ──
   const psuW = 150;
   const psuH = 86;
@@ -1208,12 +1341,12 @@ function buildScene(threeRef) {
   threeRef.current = {
     ...threeRef.current,
     scene, camera, renderer, spotLight, bodyMeshes, handleMeshes, hddLed,
-    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup, ramGroup, ssdGroup, ssd2Group, psuGroup, caseFansGroup, fanRearGroup, fanFrontGroup,
-    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM, EXPLODE_SSD, EXPLODE_SSD2, EXPLODE_PSU, EXPLODE_FANS,
+    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup, ramGroup, ssdGroup, ssd2Group, psuGroup, gpuGroup, caseFansGroup, fanRearGroup, fanFrontGroup,
+    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM, EXPLODE_SSD, EXPLODE_SSD2, EXPLODE_PSU, EXPLODE_GPU, EXPLODE_FANS,
   };
   return { scene, camera, renderer, spotLight, bodyMeshes, handleMeshes, hddLed,
-    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup, ramGroup, ssdGroup, ssd2Group, psuGroup, caseFansGroup, fanRearGroup, fanFrontGroup,
-    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM, EXPLODE_SSD, EXPLODE_SSD2, EXPLODE_PSU, EXPLODE_FANS };
+    frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, timMesh, coolerGroup, ramGroup, ssdGroup, ssd2Group, psuGroup, gpuGroup, caseFansGroup, fanRearGroup, fanFrontGroup,
+    EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM, EXPLODE_SSD, EXPLODE_SSD2, EXPLODE_PSU, EXPLODE_GPU, EXPLODE_FANS };
 }
 
 // ── Component ────────────────────────────────────────────────────────
@@ -1245,6 +1378,8 @@ function PCBuild() {
   const [fanHover,     setFanHover]     = useState(false);
   const [psuPinned,    setPsuPinned]    = useState(false);
   const [psuHover,     setPsuHover]     = useState(false);
+  const [gpuPinned,    setGpuPinned]    = useState(false);
+  const [gpuHover,     setGpuHover]     = useState(false);
   const handleActive = handleHover || handlePinned;
   const moboActive   = moboHover   || moboPinned;
   const cpuActive    = cpuHover    || cpuPinned;
@@ -1255,8 +1390,9 @@ function PCBuild() {
   const ssd2Active   = ssd2Hover   || ssd2Pinned;
   const fanActive    = fanHover    || fanPinned;
   const psuActive    = psuHover    || psuPinned;
+  const gpuActive    = gpuHover    || gpuPinned;
 
-  const activePanel = psuActive ? 'psu' : fanActive ? 'fan' : ssdActive ? 'ssd' : ssd2Active ? 'ssd2' : ramActive ? 'ram' : coolerActive ? 'cooler' : timActive ? 'tim' : cpuActive ? 'cpu' : moboActive ? 'mobo' : handleActive ? 'case' : null;
+  const activePanel = gpuActive ? 'gpu' : psuActive ? 'psu' : fanActive ? 'fan' : ssdActive ? 'ssd' : ssd2Active ? 'ssd2' : ramActive ? 'ram' : coolerActive ? 'cooler' : timActive ? 'tim' : cpuActive ? 'cpu' : moboActive ? 'mobo' : handleActive ? 'case' : null;
 
   const caseData   = window.BUILD_DATA?.parts?.find(p => p.id === 'case');
   const moboData   = window.BUILD_DATA?.parts?.find(p => p.id === 'mobo');
@@ -1283,6 +1419,11 @@ function PCBuild() {
     name: 'MSI MAG A550BN', model: '550W · 80+ Bronze · ATX', cat: 'Блок живлення', price: 2599,
     desc: 'Надійний БЖ з DC-DC перетворювачем, тихим 120мм вентилятором та фірмовим дизайном MAG. Захист від перевантаження, короткого замикання та перенапруги.',
     specs: [['Потужність', '550 Вт'], ['Сертифікат', '80 PLUS Bronze'], ['Вентилятор', '120 мм'], ['Захисти', 'OVP / UVP / OCP / SCP'], ['Роз\'єми', '24-pin, 8-pin, 6+2 PCIe'], ['Форм-фактор', 'ATX']],
+  };
+  const gpuData    = window.BUILD_DATA?.parts?.find(p => p.id === 'gpu') || {
+    name: 'NVIDIA GeForce RTX 4060', model: '8 GB GDDR6 · Dual Fan', cat: 'Відеокарта', price: 13500,
+    desc: 'Енергоефективна відеокарта архітектури Ada Lovelace. DLSS 3, трасування променів, 115 Вт TDP. Ідеальна для 1080p/1440p гейму з максимальними налаштуваннями.',
+    specs: [['Чип', 'AD107 (Ada Lovelace)'], ["Пам'ять", '8 GB GDDR6'], ['Шина пам\'яті', '128-bit'], ['TDP', '115 Вт'], ['PCIe', '4.0 x8'], ['Виходи', 'HDMI 2.1 · 3× DP 1.4a']],
   };
 
   // Sync handle emissive
@@ -1401,6 +1542,19 @@ function PCBuild() {
     });
   }, [psuActive]);
 
+  // Sync gpu emissive
+  useEffect(() => {
+    const { gpuGroup } = threeRef.current;
+    if (!gpuGroup) return;
+    gpuGroup.traverse(m => {
+      if (!m.isMesh || !m.material || !m.material.isMeshStandardMaterial) return;
+      if (m.material.map) return;
+      if (!m.material.emissive) m.material.emissive = new THREE.Color(0x000000);
+      m.material.emissive.set(gpuActive ? 0x0033cc : 0x000000);
+      m.material.emissiveIntensity = gpuActive ? 0.35 : 0;
+    });
+  }, [gpuActive]);
+
   // Three.js init
   useEffect(() => {
     if (!mountRef.current || !window.THREE) return;
@@ -1454,7 +1608,7 @@ function PCBuild() {
         setHandleHover(nowHover);
       }
       // Fan → RAM → Cooler → TIM → CPU → SSD → SSD2 → Mobo (пріоритет)
-      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg, ramGroup: rg, ssdGroup: sg, ssd2Group: sg2, psuGroup: pg, fanRearGroup: frg, fanFrontGroup: ffg } = threeRef.current;
+      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg, ramGroup: rg, ssdGroup: sg, ssd2Group: sg2, psuGroup: pg, gpuGroup: gg, fanRearGroup: frg, fanFrontGroup: ffg } = threeRef.current;
       // вентилятори: перевіряємо обидва, але результат один стан
       const fanAllChildren = [...(frg ? frg.children : []), ...(ffg ? ffg.children : [])];
       const hitsFan  = fanAllChildren.length > 0 && raycaster.intersectObjects(fanAllChildren, true).length > 0;
@@ -1472,7 +1626,9 @@ function PCBuild() {
       const hitsSsd2 = s2Hits.length > 0;
       const pHits    = (!hitsFan && !hitsRam && !hitsCooler && !hitsTim && !hitsCpu && !hitsSsd && !hitsSsd2 && pg) ? raycaster.intersectObjects(pg.children, true) : [];
       const hitsPsu  = pHits.length > 0;
-      const mHits    = (!hitsFan && !hitsRam && !hitsCooler && !hitsTim && !hitsCpu && !hitsSsd && !hitsSsd2 && !hitsPsu && mg) ? raycaster.intersectObjects(mg.children, true) : [];
+      const gHits    = (!hitsFan && !hitsRam && !hitsCooler && !hitsTim && !hitsCpu && !hitsSsd && !hitsSsd2 && !hitsPsu && gg) ? raycaster.intersectObjects(gg.children, true) : [];
+      const hitsGpu  = gHits.length > 0;
+      const mHits    = (!hitsFan && !hitsRam && !hitsCooler && !hitsTim && !hitsCpu && !hitsSsd && !hitsSsd2 && !hitsPsu && !hitsGpu && mg) ? raycaster.intersectObjects(mg.children, true) : [];
       const hitsMobo = mHits.length > 0;
       setFanHover(hitsFan);
       setRamHover(hitsRam);
@@ -1482,8 +1638,9 @@ function PCBuild() {
       setSsdHover(hitsSsd);
       setSsd2Hover(hitsSsd2);
       setPsuHover(hitsPsu);
+      setGpuHover(hitsGpu);
       setMoboHover(hitsMobo);
-      renderer.domElement.style.cursor = (nowHover || hitsFan || hitsRam || hitsCooler || hitsTim || hitsCpu || hitsSsd || hitsSsd2 || hitsPsu || hitsMobo) ? 'pointer' : 'grab';
+      renderer.domElement.style.cursor = (nowHover || hitsFan || hitsRam || hitsCooler || hitsTim || hitsCpu || hitsSsd || hitsSsd2 || hitsPsu || hitsGpu || hitsMobo) ? 'pointer' : 'grab';
     };
     const onMouseLeave = () => { spotLight.intensity = 0; };
 
@@ -1495,7 +1652,7 @@ function PCBuild() {
       getNDC(e);
       raycaster.setFromCamera(ndcMouse, camera);
       const hitHandle = raycaster.intersectObjects(handleMeshes, false).length > 0;
-      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg, ramGroup: rg, ssdGroup: sg, ssd2Group: sg2, psuGroup: pg, fanRearGroup: frg, fanFrontGroup: ffg } = threeRef.current;
+      const { moboGroup: mg, cpuGroup: cg, timGroup: tg, coolerGroup: clg, ramGroup: rg, ssdGroup: sg, ssd2Group: sg2, psuGroup: pg, gpuGroup: gg, fanRearGroup: frg, fanFrontGroup: ffg } = threeRef.current;
       const fanAll  = [...(frg ? frg.children : []), ...(ffg ? ffg.children : [])];
       const hitFan  = fanAll.length > 0 && raycaster.intersectObjects(fanAll, true).length > 0;
       const hitRam    = !hitFan && rg  ? raycaster.intersectObjects(rg.children,  true).length > 0 : false;
@@ -1505,8 +1662,9 @@ function PCBuild() {
       const hitSsd    = !hitFan && !hitRam && !hitCooler && !hitTim && !hitCpu && sg  ? raycaster.intersectObjects(sg.children,  true).length > 0 : false;
       const hitSsd2   = !hitFan && !hitRam && !hitCooler && !hitTim && !hitCpu && !hitSsd && sg2 ? raycaster.intersectObjects(sg2.children, true).length > 0 : false;
       const hitPsu    = !hitFan && !hitRam && !hitCooler && !hitTim && !hitCpu && !hitSsd && !hitSsd2 && pg ? raycaster.intersectObjects(pg.children, true).length > 0 : false;
-      const hitMobo   = !hitFan && !hitRam && !hitCooler && !hitTim && !hitCpu && !hitSsd && !hitSsd2 && !hitPsu && mg ? raycaster.intersectObjects(mg.children, true).length > 0 : false;
-      const reset = () => { setHandlePinned(false); setMoboPinned(false); setCpuPinned(false); setTimPinned(false); setCoolerPinned(false); setRamPinned(false); setSsdPinned(false); setSsd2Pinned(false); setFanPinned(false); setPsuPinned(false); };
+      const hitGpu    = !hitFan && !hitRam && !hitCooler && !hitTim && !hitCpu && !hitSsd && !hitSsd2 && !hitPsu && gg ? raycaster.intersectObjects(gg.children, true).length > 0 : false;
+      const hitMobo   = !hitFan && !hitRam && !hitCooler && !hitTim && !hitCpu && !hitSsd && !hitSsd2 && !hitPsu && !hitGpu && mg ? raycaster.intersectObjects(mg.children, true).length > 0 : false;
+      const reset = () => { setHandlePinned(false); setMoboPinned(false); setCpuPinned(false); setTimPinned(false); setCoolerPinned(false); setRamPinned(false); setSsdPinned(false); setSsd2Pinned(false); setFanPinned(false); setPsuPinned(false); setGpuPinned(false); };
       if (hitHandle)      { reset(); setHandlePinned(v => !v); }
       else if (hitFan)    { reset(); setFanPinned(v => !v); }
       else if (hitRam)    { reset(); setRamPinned(v => !v); }
@@ -1516,6 +1674,7 @@ function PCBuild() {
       else if (hitSsd)    { reset(); setSsdPinned(v => !v); }
       else if (hitSsd2)   { reset(); setSsd2Pinned(v => !v); }
       else if (hitPsu)    { reset(); setPsuPinned(v => !v); }
+      else if (hitGpu)    { reset(); setGpuPinned(v => !v); }
       else if (hitMobo)   { reset(); setMoboPinned(v => !v); }
       else                { reset(); }
     };
@@ -1544,8 +1703,8 @@ function PCBuild() {
 
       // Плавна анімація розкриття (lerp до target)
       const target = explodeRef.current;
-      const { frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, coolerGroup, ramGroup, ssdGroup, ssd2Group, psuGroup, caseFansGroup, fanFrontGroup,
-              EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM, EXPLODE_SSD, EXPLODE_SSD2, EXPLODE_PSU, EXPLODE_FANS } = threeRef.current;
+      const { frontGroup, glassGroup, topGroup, moboGroup, cpuGroup, timGroup, coolerGroup, ramGroup, ssdGroup, ssd2Group, psuGroup, gpuGroup, caseFansGroup, fanFrontGroup,
+              EXPLODE_FRONT, EXPLODE_GLASS, EXPLODE_TOP, EXPLODE_MOBO, EXPLODE_CPU, EXPLODE_TIM, EXPLODE_COOLER, EXPLODE_RAM, EXPLODE_SSD, EXPLODE_SSD2, EXPLODE_PSU, EXPLODE_GPU, EXPLODE_FANS } = threeRef.current;
       if (frontGroup && glassGroup && topGroup) {
         frontGroup.position.z  += (target * EXPLODE_FRONT    - frontGroup.position.z)  * 0.08;
         glassGroup.position.x  += (target * (-EXPLODE_GLASS) - glassGroup.position.x)  * 0.08;
@@ -1559,6 +1718,7 @@ function PCBuild() {
         if (coolerGroup)   coolerGroup.position.x   += (target * (-EXPLODE_COOLER) - coolerGroup.position.x)   * 0.08;
         if (caseFansGroup) caseFansGroup.position.x += (target * (-EXPLODE_FANS)   - caseFansGroup.position.x) * 0.08;
         if (psuGroup)      psuGroup.position.y      += (target * EXPLODE_PSU       - psuGroup.position.y)      * 0.08;
+        if (gpuGroup)      gpuGroup.position.x      += (target * (-EXPLODE_GPU)    - gpuGroup.position.x)      * 0.08;
       }
 
       controls.update();
@@ -1739,6 +1899,21 @@ function PCBuild() {
                 <div className="build-panel-price">
                   <span className="label">Ціна</span>
                   <span className="amount mono">{fanData.price.toLocaleString('uk-UA')} ₴</span>
+                </div>
+              </>
+            ) : activePanel === 'gpu' && gpuData ? (
+              <>
+                <div className="build-panel-title">{gpuData.name}</div>
+                <div className="build-panel-sub">{gpuData.model}</div>
+                <p className="build-panel-desc">{gpuData.desc}</p>
+                <div className="build-panel-specs">
+                  {gpuData.specs.map(([k, v], i) => (
+                    <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
+                  ))}
+                </div>
+                <div className="build-panel-price">
+                  <span className="label">Ціна</span>
+                  <span className="amount mono">{gpuData.price.toLocaleString('uk-UA')} ₴</span>
                 </div>
               </>
             ) : activePanel === 'psu' && psuData ? (
