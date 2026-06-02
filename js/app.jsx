@@ -4,12 +4,16 @@
 
 function Nav() {
   const [scrolled, setScrolled] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
 
   React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // close menu on link click
+  const handleLink = () => setMenuOpen(false);
 
   return (
     <nav className={`nav ${scrolled ? 'scrolled' : ''}`}>
@@ -18,18 +22,32 @@ function Nav() {
           <div className="nav-brand-mark">M</div>
           <span>PC MAX EDITION</span>
         </div>
+
+        {/* Desktop links */}
         <div className="nav-links">
           <a href="#build">Build</a>
           <a href="#arsenal">Arsenal</a>
           <a href="#bench">Benchmarks</a>
-          <a href="#message">
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" style={{marginRight:4}}>
-              <polygon points="5,0 10,10 0,10"/>
-            </svg>
-            Max
-          </a>
+          <a href="#message">Max</a>
         </div>
+
+        {/* Mobile hamburger */}
+        <button className="nav-burger" onClick={() => setMenuOpen(o => !o)} aria-label="Menu">
+          <span className={`burger-line ${menuOpen ? 'open' : ''}`}></span>
+          <span className={`burger-line ${menuOpen ? 'open' : ''}`}></span>
+          <span className={`burger-line ${menuOpen ? 'open' : ''}`}></span>
+        </button>
       </div>
+
+      {/* Mobile drawer */}
+      {menuOpen && (
+        <div className="nav-drawer">
+          <a href="#build"     onClick={handleLink}>Build</a>
+          <a href="#arsenal"   onClick={handleLink}>Arsenal</a>
+          <a href="#bench"     onClick={handleLink}>Benchmarks</a>
+          <a href="#message"   onClick={handleLink}>Max</a>
+        </div>
+      )}
     </nav>
   );
 }

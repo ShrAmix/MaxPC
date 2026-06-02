@@ -226,3 +226,26 @@
 .detail-price .label { font-size: 10px; letter-spacing: 0.2em; color: var(--text-mute); text-transform: uppercase; margin-bottom: 4px; }
 .detail-price .qty { font-size: 11px; color: var(--text-dim); letter-spacing: 0.05em; }
 .detail-price .amount { font-family: var(--font-display); font-size: 32px; color: var(--red); text-shadow: 0 0 16px rgba(255,46,61,0.4); line-height: 1; }
+
+/* ============================================
+   MOBILE — showcase / photo viewer (≤760px)
+   ============================================ */
+@media (max-width: 760px) {
+  .showcase-stage { min-height: 300px; }
+  .photo-canvas { inset: 50px 16px 100px; }
+  .photo-thumbs { bottom: 56px; max-width: calc(100% - 32px); gap: 5px; padding: 5px; }
+  .photo-thumb { width: 42px; height: 42px; }
+  .showcase-controls { bottom: 12px; padding: 4px; }
+  .showcase-controls button { padding: 7px 10px; font-size: 9px; gap: 4px; }
+  .showcase-toolbar { top: 12px; left: 14px; right: 14px; font-size: 9px; }
+
+  .detail-panel { padding: 18px 16px; }
+  .detail-head { margin-bottom: 14px; padding-bottom: 12px; }
+  .detail-name { font-size: 20px; }
+  .detail-desc { font-size: 13px; line-height: 1.5; margin-bottom: 14px; }
+  .detail-specs { gap: 0; }
+  .spec-row { padding: 7px 0; font-size: 11px; }
+  .spec-row .k { font-size: 9px; }
+  .detail-price-row { padding-top: 12px; margin-top: 12px; }
+  .detail-price { font-size: 28px; }
+}
