@@ -52,7 +52,7 @@ function Hero() {
                   <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </a>
-              <a href="#parts" className="btn btn-outline">
+              <a href="#arsenal" className="btn btn-outline">
                 Подивитись деталі
               </a>
             </div>
