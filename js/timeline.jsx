@@ -27,9 +27,9 @@ function MessageSection() {
             </div>
 
             <h2 className="msg-title">
-              З днем,{' '}
+              Максим,{' '}
               <span className="msg-name">
-                Максим
+                це твій ПК
                 <svg className="msg-name-underline" viewBox="0 0 200 6" preserveAspectRatio="none">
                   <path d="M0 3 Q50 0 100 3 Q150 6 200 3" stroke="var(--red)" strokeWidth="2" fill="none"/>
                 </svg>
@@ -47,15 +47,16 @@ function MessageSection() {
             </div>
 
             <p className="msg-text">
-              Ти про це ще не знаєш — але поки ти читаєш цей сайт, у мене вдома вже збирається твій новий ПК.
-              Кожна деталь обрана з думкою про те, у що ти граєш і чого ти хочеш від машини.
-              Хай тягне всі ігри на ультрі, не лагає у CS і дозволяє нарешті пограти Cyberpunk як треба.
+              Цей сайт — документація до заліза, яке ти вже тримаєш у руках.
+              Кожна деталь тут підібрана під тебе: щоб CS не лагав, Cyberpunk йшов як треба,
+              і щоб машина не здавалась ще років п'ять.
+              Гуляй по вкладках — тут все про твій білд: характеристики, фото, бенчмарки, ціни.
               Користуйся з кайфом.
             </p>
 
             <div className="msg-sign mono">
               <span className="msg-sign-dash">—</span>
-              <span className="msg-sign-name">Твій брат</span>
+              <span className="msg-sign-name">Діма</span>
             </div>
           </div>
 
