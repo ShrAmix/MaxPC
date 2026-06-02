@@ -110,85 +110,179 @@ function Hero() {
 // Mini-case SVG for hero
 function HeroCase() {
   return (
-    <svg className="hero-case" viewBox="0 0 100 180" preserveAspectRatio="xMidYMid meet">
+    <svg className="hero-case" viewBox="0 0 160 260" preserveAspectRatio="xMidYMid meet">
       <defs>
+        {/* glass panel gradient — cyan tint */}
         <linearGradient id="hc-glass" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0%" stopColor="rgba(0,230,255,0.18)" />
-          <stop offset="50%" stopColor="rgba(0,230,255,0.04)" />
-          <stop offset="100%" stopColor="rgba(255,46,61,0.09)" />
+          <stop offset="0%"   stopColor="rgba(0,230,255,0.13)" />
+          <stop offset="40%"  stopColor="rgba(0,230,255,0.05)" />
+          <stop offset="100%" stopColor="rgba(255,46,61,0.06)" />
         </linearGradient>
-        <linearGradient id="hc-bg" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#16161e" />
-          <stop offset="100%" stopColor="#08080d" />
+        {/* body gradient */}
+        <linearGradient id="hc-body" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%"   stopColor="#1c1c24" />
+          <stop offset="100%" stopColor="#0a0a0f" />
         </linearGradient>
-        <filter id="hc-glow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="1.5" />
+        {/* mobo gradient */}
+        <linearGradient id="hc-mobo" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%"   stopColor="#0b1a10" />
+          <stop offset="100%" stopColor="#090d0b" />
+        </linearGradient>
+        {/* GPU gradient */}
+        <linearGradient id="hc-gpu" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%"   stopColor="#1c0a0d" />
+          <stop offset="100%" stopColor="#0f0609" />
+        </linearGradient>
+        {/* PSU gradient */}
+        <linearGradient id="hc-psu" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%"   stopColor="#141008" />
+          <stop offset="100%" stopColor="#0a0905" />
+        </linearGradient>
+        {/* glow filter */}
+        <filter id="hc-glow-r" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="2.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
-        {/* mesh pattern — replaces 112 individual circles */}
-        <pattern id="hc-mesh" x="0" y="0" width="3" height="6" patternUnits="userSpaceOnUse">
-          <circle cx="1.5" cy="3" r="0.6" fill="#ffffff" opacity="0.22" />
+        <filter id="hc-glow-c" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="2" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        {/* mesh dot pattern for front panel */}
+        <pattern id="hc-mesh" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+          <circle cx="2" cy="2" r="0.7" fill="rgba(255,255,255,0.18)" />
         </pattern>
+        {/* cooler fin pattern */}
+        <pattern id="hc-fin" x="0" y="0" width="4" height="1" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="0.5" x2="4" y2="0.5" stroke="#3a3a50" strokeWidth="0.5"/>
+        </pattern>
+        {/* glass glare */}
+        <linearGradient id="hc-glare" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%"   stopColor="rgba(255,255,255,0.07)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+        </linearGradient>
       </defs>
 
-      {/* outer case body */}
-      <rect x="3" y="3" width="94" height="174" fill="url(#hc-bg)" stroke="#2a2a3a" strokeWidth="1" />
+      {/* ── OUTER SHELL ── */}
+      {/* Main body */}
+      <rect x="4" y="4" width="152" height="252" rx="2" fill="url(#hc-body)" stroke="#252530" strokeWidth="1.2" />
 
-      {/* mesh front strip — CSS animation class instead of SVG animate */}
-      <rect x="6" y="6" width="14" height="168" fill="rgba(0,0,0,0.55)" stroke="#1a1a26" strokeWidth="0.5" />
-      <rect x="6" y="6" width="14" height="168" fill="url(#hc-mesh)" />
+      {/* ── FRONT MESH PANEL (left strip, ~20% width) ── */}
+      <rect x="4" y="4" width="26" height="252" rx="2" fill="#0c0c10" stroke="#252530" strokeWidth="0.8" />
+      <rect x="5" y="5" width="24" height="250" fill="url(#hc-mesh)" />
 
-      {/* I/O panel top */}
-      <rect x="22" y="6" width="40" height="6" fill="#0a0a12" stroke="#1a1a26" strokeWidth="0.5" />
-      <circle cx="26" cy="9" r="0.8" fill="#ff2e3d" className="hc-led-power" />
-      <circle cx="30" cy="9" r="0.8" fill="#00e6ff" opacity="0.7" />
+      {/* front mesh highlight edges */}
+      <line x1="30" y1="4" x2="30" y2="256" stroke="#2a2a38" strokeWidth="0.8"/>
 
-      {/* glass side panel */}
-      <rect x="22" y="14" width="72" height="160" fill="url(#hc-glass)" stroke="#1a1a26" strokeWidth="0.5" />
+      {/* ── I/O STRIP (top-right area) ── */}
+      <rect x="32" y="6" width="80" height="10" rx="1" fill="#0d0d14" stroke="#1e1e28" strokeWidth="0.6"/>
+      {/* power button */}
+      <circle cx="40" cy="11" r="3" fill="#0a0a10" stroke="#252530" strokeWidth="0.8"/>
+      <circle cx="40" cy="11" r="1.5" fill="#ff2e3d" className="hc-led-power" filter="url(#hc-glow-r)"/>
+      {/* USB-A */}
+      <rect x="50" y="8" width="5" height="6" rx="0.5" fill="#0033aa" opacity="0.9"/>
+      <rect x="57" y="8" width="5" height="6" rx="0.5" fill="#111118" opacity="0.7"/>
+      {/* audio jack */}
+      <circle cx="69" cy="11" r="2.2" fill="#0a0a12" stroke="#1e1e28" strokeWidth="0.5"/>
+      <circle cx="69" cy="11" r="1" fill="#151520"/>
 
-      {/* === internals === */}
-      <g opacity="0.88">
-        {/* motherboard */}
-        <rect x="40" y="20" width="50" height="100" fill="#0d1810" stroke="#2bff88" strokeWidth="0.6" opacity="0.65" />
+      {/* ── RGB STRIP (top edge, under I/O) ── */}
+      <rect x="32" y="17" width="124" height="2.5" fill="#ff2e3d" opacity="0.9" className="hc-rgb-strip" filter="url(#hc-glow-r)"/>
 
-        {/* CPU cooler tower */}
-        <rect x="48" y="26" width="22" height="32" fill="#1a1a22" stroke="#c8c8d8" strokeWidth="0.6" />
-        <line x1="50" y1="28" x2="50" y2="56" stroke="#3a3a48" strokeWidth="0.4" />
-        <line x1="54" y1="28" x2="54" y2="56" stroke="#3a3a48" strokeWidth="0.4" />
-        <line x1="58" y1="28" x2="58" y2="56" stroke="#3a3a48" strokeWidth="0.4" />
-        <line x1="62" y1="28" x2="62" y2="56" stroke="#3a3a48" strokeWidth="0.4" />
-        <line x1="66" y1="28" x2="66" y2="56" stroke="#3a3a48" strokeWidth="0.4" />
+      {/* ── GLASS PANEL ── */}
+      <rect x="32" y="21" width="120" height="216" fill="url(#hc-glass)" stroke="#1c2228" strokeWidth="0.6"/>
+      {/* glass glare diagonal */}
+      <rect x="33" y="22" width="30" height="214" fill="url(#hc-glare)"/>
 
-        {/* RAM sticks */}
-        <rect x="74" y="26" width="6" height="22" fill="#0a1218" stroke="#00e6ff" strokeWidth="0.5" />
-        <rect x="82" y="26" width="6" height="22" fill="#0a1218" stroke="#00e6ff" strokeWidth="0.5" />
-        <rect x="74" y="26" width="6" height="4" fill="#00e6ff" opacity="0.35" />
-        <rect x="82" y="26" width="6" height="4" fill="#00e6ff" opacity="0.35" />
+      {/* ── INTERNALS (visible through glass) ── */}
+      <g opacity="0.92">
 
-        {/* GPU */}
-        <rect x="40" y="68" width="50" height="14" fill="#1a0a0d" stroke="#ff2e3d" strokeWidth="0.6" />
-        <circle cx="48" cy="75" r="3.5" fill="none" stroke="#ff2e3d" strokeWidth="0.4" opacity="0.65" />
-        <circle cx="60" cy="75" r="3.5" fill="none" stroke="#ff2e3d" strokeWidth="0.4" opacity="0.65" />
-        {/* GPU fans — CSS animation via class */}
-        <circle cx="48" cy="75" r="1" fill="#ff2e3d" className="hc-led-gpu" />
-        <circle cx="60" cy="75" r="1" fill="#ff2e3d" className="hc-led-gpu-2" />
+        {/* MOTHERBOARD */}
+        <rect x="50" y="28" width="90" height="120" rx="1" fill="url(#hc-mobo)" stroke="#2bff88" strokeWidth="0.7" opacity="0.7"/>
+        {/* mobo trace lines */}
+        <line x1="50" y1="60"  x2="140" y2="60"  stroke="#1a3020" strokeWidth="0.4"/>
+        <line x1="50" y1="90"  x2="140" y2="90"  stroke="#1a3020" strokeWidth="0.4"/>
+        <line x1="90" y1="28"  x2="90"  y2="148" stroke="#1a3020" strokeWidth="0.4"/>
 
-        {/* SSD slot */}
-        <rect x="40" y="88" width="24" height="8" fill="#0d0d18" stroke="#a87bff" strokeWidth="0.4" opacity="0.7" />
-        <text x="43" y="94" fill="#a87bff" fontSize="3" fontFamily="monospace" opacity="0.8">NVMe</text>
+        {/* CPU SOCKET area */}
+        <rect x="54" y="32" width="28" height="28" rx="1" fill="#0f1a12" stroke="#2bff88" strokeWidth="0.5" opacity="0.5"/>
 
-        {/* PSU shroud */}
-        <rect x="26" y="140" width="64" height="22" fill="#0c0c14" stroke="#ffb547" strokeWidth="0.5" opacity="0.7" />
-        <circle cx="34" cy="151" r="5" fill="none" stroke="#ffb547" strokeWidth="0.4" opacity="0.65" />
-        <circle cx="34" cy="151" r="2" fill="none" stroke="#ffb547" strokeWidth="0.3" opacity="0.45" />
-        <text x="56" y="153" fill="#ffb547" fontSize="3.5" fontFamily="monospace" letterSpacing="0.5" opacity="0.75">550W</text>
+        {/* CPU COOLER — tower fins */}
+        <rect x="54" y="30" width="28" height="34" rx="1" fill="#1a1a26" stroke="#aaaacc" strokeWidth="0.7"/>
+        <rect x="55" y="31" width="26" height="32" fill="url(#hc-fin)"/>
+        {/* cooler fan circle */}
+        <circle cx="67" cy="47" r="10" fill="none" stroke="#252538" strokeWidth="1.2"/>
+        <circle cx="67" cy="47" r="6"  fill="none" stroke="#303048" strokeWidth="0.8"/>
+        <circle cx="67" cy="47" r="2"  fill="#1a1a26" stroke="#454560" strokeWidth="0.6"/>
+        {/* fan blades hint */}
+        <line x1="67" y1="38" x2="67" y2="41" stroke="#404055" strokeWidth="1"/>
+        <line x1="67" y1="53" x2="67" y2="56" stroke="#404055" strokeWidth="1"/>
+        <line x1="58" y1="47" x2="61" y2="47" stroke="#404055" strokeWidth="1"/>
+        <line x1="73" y1="47" x2="76" y2="47" stroke="#404055" strokeWidth="1"/>
+
+        {/* RAM STICKS — 2× vertical beside cooler */}
+        <rect x="88" y="30" width="7" height="30" rx="0.5" fill="#0a1018" stroke="#00e6ff" strokeWidth="0.7"/>
+        <rect x="97" y="30" width="7" height="30" rx="0.5" fill="#0a1018" stroke="#00e6ff" strokeWidth="0.7"/>
+        {/* RAM RGB top bar */}
+        <rect x="88" y="30" width="7" height="5" fill="#00e6ff" opacity="0.4" filter="url(#hc-glow-c)"/>
+        <rect x="97" y="30" width="7" height="5" fill="#00e6ff" opacity="0.4" filter="url(#hc-glow-c)"/>
+        {/* RAM chips */}
+        <rect x="89" y="38" width="5" height="3" rx="0.3" fill="#0d2030" stroke="#005577" strokeWidth="0.3"/>
+        <rect x="89" y="43" width="5" height="3" rx="0.3" fill="#0d2030" stroke="#005577" strokeWidth="0.3"/>
+        <rect x="98" y="38" width="5" height="3" rx="0.3" fill="#0d2030" stroke="#005577" strokeWidth="0.3"/>
+        <rect x="98" y="43" width="5" height="3" rx="0.3" fill="#0d2030" stroke="#005577" strokeWidth="0.3"/>
+
+        {/* PCIE slot */}
+        <rect x="50" y="102" width="90" height="3" rx="0.5" fill="#1a1028" stroke="#333" strokeWidth="0.4" opacity="0.8"/>
+
+        {/* GPU CARD — horizontal, long */}
+        <rect x="36" y="108" width="104" height="36" rx="1" fill="url(#hc-gpu)" stroke="#ff2e3d" strokeWidth="0.8"/>
+        {/* GPU heatsink fins */}
+        <rect x="38" y="110" width="96" height="32" rx="0.5" fill="#130810" stroke="#2a1015" strokeWidth="0.4"/>
+        {/* GPU fans — 2 large */}
+        <circle cx="62"  cy="126" r="13" fill="none" stroke="#2a1010" strokeWidth="1"/>
+        <circle cx="62"  cy="126" r="8"  fill="none" stroke="#351010" strokeWidth="0.8"/>
+        <circle cx="62"  cy="126" r="3"  fill="#200810" stroke="#ff2e3d" strokeWidth="0.5" opacity="0.8"/>
+        <circle cx="100" cy="126" r="13" fill="none" stroke="#2a1010" strokeWidth="1"/>
+        <circle cx="100" cy="126" r="8"  fill="none" stroke="#351010" strokeWidth="0.8"/>
+        <circle cx="100" cy="126" r="3"  fill="#200810" stroke="#ff2e3d" strokeWidth="0.5" opacity="0.8"/>
+        {/* GPU fan LED centers */}
+        <circle cx="62"  cy="126" r="1.2" fill="#ff2e3d" className="hc-led-gpu"   filter="url(#hc-glow-r)"/>
+        <circle cx="100" cy="126" r="1.2" fill="#ff2e3d" className="hc-led-gpu-2" filter="url(#hc-glow-r)"/>
+        {/* GPU RGB underglow strip */}
+        <rect x="38" y="143" width="96" height="1.5" fill="#ff2e3d" opacity="0.6" className="hc-rgb-strip" filter="url(#hc-glow-r)"/>
+
+        {/* NVMe SSD — under mobo area */}
+        <rect x="54" y="152" width="42" height="8" rx="0.5" fill="#0d0d1c" stroke="#a87bff" strokeWidth="0.6" opacity="0.85"/>
+        <text x="57" y="158" fill="#a87bff" fontSize="4.5" fontFamily="monospace" opacity="0.9" letterSpacing="0.3">NVMe SSD</text>
+        {/* SSD chips */}
+        <rect x="100" y="153" width="6" height="6" rx="0.5" fill="#0d0a18" stroke="#7060cc" strokeWidth="0.4" opacity="0.7"/>
+        <rect x="108" y="153" width="6" height="6" rx="0.5" fill="#0d0a18" stroke="#7060cc" strokeWidth="0.4" opacity="0.7"/>
+
       </g>
 
-      {/* RGB strip — CSS animation */}
-      <rect x="22" y="14" width="72" height="2" fill="#ff2e3d" filter="url(#hc-glow)" className="hc-rgb-strip" />
+      {/* ── PSU SHROUD (bottom zone) ── */}
+      <rect x="32" y="196" width="124" height="4" fill="#1a1a24" stroke="#252530" strokeWidth="0.5"/>
+      <rect x="32" y="200" width="124" height="52" rx="1" fill="url(#hc-psu)" stroke="#332800" strokeWidth="0.8"/>
+      {/* PSU fan */}
+      <circle cx="54"  cy="226" r="18" fill="none" stroke="#2a2208" strokeWidth="1"/>
+      <circle cx="54"  cy="226" r="12" fill="none" stroke="#332a08" strokeWidth="0.8"/>
+      <circle cx="54"  cy="226" r="4"  fill="#1a1505" stroke="#ffb547" strokeWidth="0.6" opacity="0.8"/>
+      {/* fan blades */}
+      <line x1="54"  y1="210" x2="54"  y2="215" stroke="#3a3010" strokeWidth="1.2"/>
+      <line x1="54"  y1="237" x2="54"  y2="242" stroke="#3a3010" strokeWidth="1.2"/>
+      <line x1="38"  y1="226" x2="43"  y2="226" stroke="#3a3010" strokeWidth="1.2"/>
+      <line x1="65"  y1="226" x2="70"  y2="226" stroke="#3a3010" strokeWidth="1.2"/>
+      {/* PSU label */}
+      <rect x="80" y="212" width="64" height="24" rx="1" fill="#0f0c05" stroke="#2a2008" strokeWidth="0.5"/>
+      <text x="112" y="223" fill="#ffb547" fontSize="6" fontFamily="monospace" textAnchor="middle" opacity="0.9" letterSpacing="0.8">550W</text>
+      <text x="112" y="231" fill="#ffb547" fontSize="3.5" fontFamily="monospace" textAnchor="middle" opacity="0.5" letterSpacing="0.3">80+ BRONZE</text>
 
-      {/* rubber feet */}
-      <rect x="10" y="174" width="6" height="4" fill="#1a1a22" rx="1" />
-      <rect x="84" y="174" width="6" height="4" fill="#1a1a22" rx="1" />
+      {/* ── TOP PANEL ── */}
+      <rect x="4" y="4" width="152" height="5" rx="1" fill="#222230" stroke="#2a2a3a" strokeWidth="0.5"/>
+
+      {/* ── RUBBER FEET ── */}
+      <rect x="14" y="252" width="10" height="5" rx="2" fill="#111116"/>
+      <rect x="136" y="252" width="10" height="5" rx="2" fill="#111116"/>
     </svg>
   );
 }

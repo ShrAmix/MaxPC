@@ -179,8 +179,8 @@
 
 .hero-case {
   position: relative;
-  width: 64%;
-  aspect-ratio: 0.55 / 1;
+  width: 60%;
+  aspect-ratio: 160 / 260;
   z-index: 2;
   animation: float 6s ease-in-out infinite;
 }
