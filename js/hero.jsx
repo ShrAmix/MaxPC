@@ -42,7 +42,7 @@ function Hero() {
 
             <p className="hero-desc">
               Кастомна збірка на AMD Ryzen&nbsp;5&nbsp;5600&nbsp;+&nbsp;RTX&nbsp;4060,
-              заточена під 1080p ultra. Збирається прямо зараз — спеціально для тебе.
+              заточена під 1080p ultra. Зібрана спеціально для тебе — і це твоя машина.
             </p>
 
             <div className="hero-cta">
