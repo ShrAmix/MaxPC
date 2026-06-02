@@ -1824,7 +1824,7 @@ function PCBuild() {
                 <div className="build-panel-sub">{caseData.model}</div>
                 <p className="build-panel-desc">{caseData.desc}</p>
                 <div className="build-panel-specs">
-                  {caseData.specs.map(([k, v], i) => (
+                  {(caseData.quickSpecs || caseData.specs).map(([k, v], i) => (
                     <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
                   ))}
                 </div>
@@ -1839,7 +1839,7 @@ function PCBuild() {
                 <div className="build-panel-sub">{coolerData.model}</div>
                 <p className="build-panel-desc">{coolerData.desc}</p>
                 <div className="build-panel-specs">
-                  {coolerData.specs.map(([k, v], i) => (
+                  {(coolerData.quickSpecs || coolerData.specs).map(([k, v], i) => (
                     <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
                   ))}
                 </div>
@@ -1854,7 +1854,7 @@ function PCBuild() {
                 <div className="build-panel-sub">{timData.model}</div>
                 <p className="build-panel-desc">{timData.desc}</p>
                 <div className="build-panel-specs">
-                  {timData.specs.map(([k, v], i) => (
+                  {(timData.quickSpecs || timData.specs).map(([k, v], i) => (
                     <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
                   ))}
                 </div>
@@ -1869,7 +1869,7 @@ function PCBuild() {
                 <div className="build-panel-sub">{ssdData.model}</div>
                 <p className="build-panel-desc">{ssdData.desc}</p>
                 <div className="build-panel-specs">
-                  {ssdData.specs.map(([k, v], i) => (
+                  {(ssdData.quickSpecs || ssdData.specs).map(([k, v], i) => (
                     <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
                   ))}
                 </div>
@@ -1884,7 +1884,7 @@ function PCBuild() {
                 <div className="build-panel-sub">{ssd2Data.model}</div>
                 <p className="build-panel-desc">{ssd2Data.desc}</p>
                 <div className="build-panel-specs">
-                  {ssd2Data.specs.map(([k, v], i) => (
+                  {(ssd2Data.quickSpecs || ssd2Data.specs).map(([k, v], i) => (
                     <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
                   ))}
                 </div>
@@ -1899,7 +1899,7 @@ function PCBuild() {
                 <div className="build-panel-sub">{fanData.model}</div>
                 <p className="build-panel-desc">{fanData.desc}</p>
                 <div className="build-panel-specs">
-                  {fanData.specs.map(([k, v], i) => (
+                  {(fanData.quickSpecs || fanData.specs).map(([k, v], i) => (
                     <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
                   ))}
                 </div>
@@ -1914,7 +1914,7 @@ function PCBuild() {
                 <div className="build-panel-sub">{gpuData.model}</div>
                 <p className="build-panel-desc">{gpuData.desc}</p>
                 <div className="build-panel-specs">
-                  {gpuData.specs.map(([k, v], i) => (
+                  {(gpuData.quickSpecs || gpuData.specs).map(([k, v], i) => (
                     <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
                   ))}
                 </div>
@@ -1929,7 +1929,7 @@ function PCBuild() {
                 <div className="build-panel-sub">{psuData.model}</div>
                 <p className="build-panel-desc">{psuData.desc}</p>
                 <div className="build-panel-specs">
-                  {psuData.specs.map(([k, v], i) => (
+                  {(psuData.quickSpecs || psuData.specs).map(([k, v], i) => (
                     <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
                   ))}
                 </div>
@@ -1944,7 +1944,7 @@ function PCBuild() {
                 <div className="build-panel-sub">{cpuData.model}</div>
                 <p className="build-panel-desc">{cpuData.desc}</p>
                 <div className="build-panel-specs">
-                  {cpuData.specs.map(([k, v], i) => (
+                  {(cpuData.quickSpecs || cpuData.specs).map(([k, v], i) => (
                     <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
                   ))}
                 </div>
@@ -1959,7 +1959,7 @@ function PCBuild() {
                 <div className="build-panel-sub">{moboData.model}</div>
                 <p className="build-panel-desc">{moboData.desc}</p>
                 <div className="build-panel-specs">
-                  {moboData.specs.map(([k, v], i) => (
+                  {(moboData.quickSpecs || moboData.specs).map(([k, v], i) => (
                     <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
                   ))}
                 </div>
@@ -1974,7 +1974,7 @@ function PCBuild() {
                 <div className="build-panel-sub">{ramData.model}</div>
                 <p className="build-panel-desc">{ramData.desc}</p>
                 <div className="build-panel-specs">
-                  {ramData.specs.map(([k, v], i) => (
+                  {(ramData.quickSpecs || ramData.specs).map(([k, v], i) => (
                     <div className="row" key={i}><span className="k">{k}</span><span className="v">{v}</span></div>
                   ))}
                 </div>

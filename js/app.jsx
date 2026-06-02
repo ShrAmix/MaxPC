@@ -3,8 +3,16 @@
 // =============================================
 
 function Nav() {
+  const [scrolled, setScrolled] = React.useState(false);
+
+  React.useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <nav className="nav">
+    <nav className={`nav ${scrolled ? 'scrolled' : ''}`}>
       <div className="nav-inner">
         <div className="nav-brand">
           <div className="nav-brand-mark">M</div>
@@ -13,9 +21,13 @@ function Nav() {
         <div className="nav-links">
           <a href="#build">Build</a>
           <a href="#arsenal">Arsenal</a>
-          <a href="#price">Price</a>
           <a href="#bench">Benchmarks</a>
-          <a href="#timeline">Timeline</a>
+          <a href="#message">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" style={{marginRight:4}}>
+              <polygon points="5,0 10,10 0,10"/>
+            </svg>
+            Max
+          </a>
         </div>
       </div>
     </nav>
@@ -31,9 +43,8 @@ function App() {
   }, []);
 
   const {
-    Hero, PCBuild, ArsenalSection, PricingSection,
-    SpecsSection, BenchmarksSection, TimelineSection,
-    MessageSection, Footer,
+    Hero, PCBuild, ArsenalSection,
+    BenchmarksSection, MessageSection, Footer,
   } = window;
 
   return (
@@ -42,10 +53,7 @@ function App() {
       <Hero />
       <PCBuild />
       <ArsenalSection />
-      <PricingSection />
-      <SpecsSection />
       <BenchmarksSection />
-      <TimelineSection />
       <MessageSection />
       <Footer />
     </React.Fragment>
