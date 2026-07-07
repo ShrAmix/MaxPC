@@ -15,9 +15,8 @@ function Hero() {
 
   const totalParts = window.BUILD_DATA.parts.length;
   const totalPrice = window.BUILD_DATA.parts.reduce((s,p) => s + p.price, 0);
-  const avgFps = Math.round(
-    window.BUILD_DATA.fps.reduce((s,g) => s + g.avg, 0) / window.BUILD_DATA.fps.length
-  );
+  // Орієнтовний середній FPS в AAA-іграх (1080p) — уточнити після власних замірів
+  const avgFps = 160;
 
   return (
     <section className="hero" id="hero">
@@ -74,7 +73,7 @@ function Hero() {
                 <div className="hero-stat-num">
                   ~<CountUp to={avgFps} /><span className="unit">fps</span>
                 </div>
-                <div className="hero-stat-label">Середній FPS 1080p</div>
+                <div className="hero-stat-label">Середній FPS в AAA · 1080p</div>
               </div>
             </div>
           </div>
