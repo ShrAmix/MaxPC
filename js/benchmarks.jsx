@@ -239,3 +239,4 @@ function BenchCard({ b, visible, delay }) {
 }
 
 window.BenchmarksSection = BenchmarksSection;
+window.SettingsLightbox = SettingsLightbox;
