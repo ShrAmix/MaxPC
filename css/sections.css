@@ -1199,6 +1199,7 @@
   padding-left: 8px; padding-right: 8px;
 }
 .fps-row.is-clickable:hover .settings-hint { opacity: 1; color: var(--cyan); }
+.fps-row.is-clickable:last-child { border-bottom: none; }
 .fps-game { display: flex; flex-direction: column; gap: 4px; }
 .game-name { font-family: var(--font-display); font-size: 15px; text-transform: uppercase; }
 .game-meta {

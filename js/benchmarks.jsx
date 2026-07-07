@@ -62,8 +62,12 @@ function BenchmarksSection() {
                   <div className="fps-game">
                     <span className="game-name">{g.name}</span>
                     <span className="game-meta mono">
-                      <span className="temp cpu">CPU {g.tCpu != null ? `${g.tCpu}°` : '—'}</span>
-                      <span className="temp gpu">GPU {g.tGpu != null ? `${g.tGpu}°` : '—'}</span>
+                      <span className="temp cpu">
+                        CPU {g.lCpu != null ? `${g.lCpu}%` : '—'} · {g.tCpu != null ? `${g.tCpu}°` : '—'}
+                      </span>
+                      <span className="temp gpu">
+                        GPU {g.lGpu != null ? `${g.lGpu}%` : '—'} · {g.tGpu != null ? `${g.tGpu}°` : '—'}
+                      </span>
                       <span className="settings-hint">Налаштування ↗</span>
                     </span>
                   </div>
