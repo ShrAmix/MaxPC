@@ -1116,7 +1116,7 @@ function buildScene(threeRef) {
   // Z = D - T - 12.5 (всередину від передньої панелі), rotation.y = PI (лицем всередину)
   const fanFrontGroup = createArcticFan(frontGroup, W / 2, 70, D - T - 12.5, 0, Math.PI, 0);
   
-  // ── Відеокарта: NVIDIA GeForce RTX 4060 (Dual Fan) ──
+  // ── Відеокарта: NVIDIA GeForce RTX 5060 (Dual Fan) ──
   const gpuL     = 220;
   const gpuW     = 115;
   const gpuThick = 42;
@@ -1180,7 +1180,7 @@ function buildScene(threeRef) {
   ctxGpuLogo.fillStyle = '#0c0c0e'; ctxGpuLogo.fillRect(0, 0, 512, 64);
   ctxGpuLogo.fillStyle = '#cccccc';
   ctxGpuLogo.font = 'bold 34px Arial'; ctxGpuLogo.textAlign = 'center';
-  ctxGpuLogo.fillText('GEFORCE RTX  4060', 256, 44);
+  ctxGpuLogo.fillText('GEFORCE RTX  5060', 256, 44);
   const gpuSideLogo = new THREE.Mesh(
     new THREE.PlaneGeometry(gpuL - 20, 14),
     new THREE.MeshStandardMaterial({
@@ -1421,9 +1421,9 @@ function PCBuild() {
     specs: [['Потужність', '550 Вт'], ['Сертифікат', '80 PLUS Bronze'], ['Вентилятор', '120 мм'], ['Захисти', 'OVP / UVP / OCP / SCP'], ['Роз\'єми', '24-pin, 8-pin, 6+2 PCIe'], ['Форм-фактор', 'ATX']],
   };
   const gpuData    = window.BUILD_DATA?.parts?.find(p => p.id === 'gpu') || {
-    name: 'NVIDIA GeForce RTX 4060', model: '8 GB GDDR6 · Dual Fan', cat: 'Відеокарта', price: 13500,
-    desc: 'Енергоефективна відеокарта архітектури Ada Lovelace. DLSS 3, трасування променів, 115 Вт TDP. Ідеальна для 1080p/1440p гейму з максимальними налаштуваннями.',
-    specs: [['Чип', 'AD107 (Ada Lovelace)'], ["Пам'ять", '8 GB GDDR6'], ['Шина пам\'яті', '128-bit'], ['TDP', '115 Вт'], ['PCIe', '4.0 x8'], ['Виходи', 'HDMI 2.1 · 3× DP 1.4a']],
+    name: 'NVIDIA GeForce RTX 5060', model: '8 GB GDDR7 · Dual Fan', cat: 'Відеокарта', price: 18099,
+    desc: 'Енергоефективна відеокарта архітектури Blackwell. DLSS 4, трасування променів, 145 Вт TDP. Ідеальна для 1080p/1440p гейму з максимальними налаштуваннями.',
+    specs: [['Чип', 'GB206 (Blackwell)'], ["Пам'ять", '8 GB GDDR7'], ['Шина пам\'яті', '128-bit'], ['TDP', '145 Вт'], ['PCIe', '5.0 x8'], ['Виходи', 'HDMI 2.1b · 3× DP 2.1b']],
   };
 
   // Sync handle emissive

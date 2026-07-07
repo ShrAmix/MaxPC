@@ -25,7 +25,7 @@ function PricingSection() {
           <span className="eyebrow">04 / Бюджет</span>
           <h2 className="section-title">Скільки <span className="glow-red">це коштувало</span></h2>
           <p className="section-sub">
-            Усі ціни в гривнях, на момент замовлення (травень 2026). RTX 4060 — приблизна вартість, скоригуємо після покупки.
+            Усі ціни в гривнях, на момент замовлення (травень 2026). RTX 5060 — приблизна вартість, скоригуємо після покупки.
           </p>
         </div>
 
@@ -84,7 +84,7 @@ function PricingSection() {
             </div>
 
             <div className="footnote">
-              * Ціна RTX 4060 — Asus Dual поки що плейсхолдер.<br/>
+              * Ціна RTX 5060 — Asus Dual поки що плейсхолдер.<br/>
               * Без урахування Windows ліцензії та периферії.
             </div>
           </div>

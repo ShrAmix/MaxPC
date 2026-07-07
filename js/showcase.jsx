@@ -346,7 +346,7 @@ function PricingTab() {
           </div>
 
           <div className="ps-note mono">
-            * RTX 4060 — орієнтовна ціна, скоригуємо після покупки.<br/>
+            * RTX 5060 — орієнтовна ціна, скоригуємо після покупки.<br/>
             * Без Windows ліцензії та периферії.
           </div>
         </div>
@@ -370,8 +370,8 @@ function SpecsTab() {
     },
     {
       label: 'Відеокарта',
-      value: 'RTX 4060 8 GB',
-      meta: 'GDDR6 · DLSS 3.0 · Frame Gen · 115W',
+      value: 'RTX 5060 8 GB',
+      meta: 'GDDR7 · DLSS 4.0 · Multi Frame Gen · 145W',
       color: 'var(--red)',
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4"><rect x="1" y="7" width="22" height="10" rx="1"/><circle cx="8" cy="12" r="2.5"/><circle cx="16" cy="12" r="2.5"/><line x1="5" y1="5" x2="5" y2="7"/><line x1="12" y1="5" x2="12" y2="7"/><line x1="19" y1="5" x2="19" y2="7"/></svg>,
     },

@@ -25,7 +25,7 @@ function BenchmarksSection() {
           <span className="eyebrow">05 / Продуктивність</span>
           <h2 className="section-title">FPS + <span className="glow-cyan">Бенчмарки</span></h2>
           <p className="section-sub">
-            Ігрові результати — реалістичні цифри для RTX 4060 + Ryzen 5 5600 у Full HD.
+            Ігрові результати — реалістичні цифри для RTX 5060 + Ryzen 5 5600 у Full HD.
             Синтетичні тести — виміряні на реальному залізі, де позначено.
           </p>
         </div>

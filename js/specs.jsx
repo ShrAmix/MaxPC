@@ -5,7 +5,7 @@
 function SpecsSection() {
   const specs = [
     { label: 'CPU', value: 'Ryzen 5 5600', meta: '6C / 12T · до 4.4 GHz · 65W', icon: '◢' },
-    { label: 'GPU', value: 'RTX 4060', meta: '8 GB GDDR6 · DLSS 3.0 · 115W', icon: '◤' },
+    { label: 'GPU', value: 'RTX 5060', meta: '8 GB GDDR7 · DLSS 4.0 · 145W', icon: '◤' },
     { label: 'RAM', value: '32 GB DDR4', meta: '3200 MHz · CL16 · Dual-channel', icon: '▤' },
     { label: 'Storage', value: '512 GB + 1 TB', meta: 'NVMe M.2 · ~1.5 TB total', icon: '◉' },
     { label: 'PSU', value: '550W Bronze', meta: 'MSI MAG A550BN · 80+', icon: '⚡' },

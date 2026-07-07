@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -iE '\\\\.\\(png|jpg|jpeg|webp\\)$')",
+      "Bash(mkdir -p images/gpu)",
+      "Bash(git mv *)",
+      "Bash(mv 1.png images/gpu/01.png)",
+      "Bash(mv 2.png images/gpu/02.png)",
+      "Bash(mv 3.png images/gpu/03.png)",
+      "Bash(mv 4.png images/gpu/04.png)"
+    ]
+  }
+}
