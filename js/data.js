@@ -392,14 +392,20 @@ const BUILD_DATA = {
     },
   ],
 
-  // FPS in 1080p — realistic for RTX 5060 + R5 5600
+  // FPS in 1080p — RTX 5060 + R5 5600.
+  // Заміри БЕЗ ліміту кадрів. Рекомендований ліміт для монітора — 144–180 FPS.
+  // slug   — назва папки скрінів налаштувань: images/settings/<slug>/01.png, 02.png ...
+  // shots  — скільки скрінів у папці (стільки й підтягнеться в галерею).
+  // tCpu / tGpu — температури під час гри (°C), null = ще не заміряно (покаже прочерк).
+  fpsNote: "Оптимальна картинка × кадри. Ліміт кадрів рекомендуємо ставити на 144–180 FPS — під частоту монітора, щоб відеокарта відпочивала.",
   fps: [
-    { name: "Counter-Strike 2",       preset: "Very High · 1080p",          avg: 320, lo: 220, cyan: true },
-    { name: "Cyberpunk 2077",          preset: "High + DLSS Quality · 1080p", avg: 95,  lo: 78  },
-    { name: "GTA V",                   preset: "Very High · 1080p",          avg: 165, lo: 130 },
-    { name: "God of War",              preset: "Ultra + DLSS · 1080p",       avg: 110, lo: 88  },
-    { name: "Forza Horizon 5",         preset: "Ultra · 1080p",              avg: 130, lo: 102 },
-    { name: "Need for Speed Unbound",  preset: "Ultra · 1080p",              avg: 142, lo: 110 },
+    { name: "Counter-Strike 2",        slug: "cs2",          shots: 3, avg: 320, lo: 220, tCpu: null, tGpu: null, cyan: true },
+    { name: "Cyberpunk 2077",          slug: "cyberpunk",    shots: 3, avg: 95,  lo: 78,  tCpu: null, tGpu: null },
+    { name: "God of War",     slug: "gow",          shots: 3, avg: 110, lo: 88,  tCpu: null, tGpu: null },
+    { name: "Marvel's Spider-Man",     slug: "spiderman",    shots: 3, avg: 120, lo: 95,  tCpu: null, tGpu: null },
+    { name: "Expedition 33",           slug: "expedition33", shots: 3, avg: 90,  lo: 72,  tCpu: null, tGpu: null },
+    { name: "Forza Horizon 6",         slug: "forza",        shots: 3, avg: 130, lo: 102, tCpu: null, tGpu: null },
+    { name: "Need for Speed Unbound",  slug: "nfs",          shots: 3, avg: 142, lo: 110, tCpu: null, tGpu: null },
   ],
 
   // Benchmark results
