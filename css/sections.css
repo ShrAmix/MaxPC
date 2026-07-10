@@ -1211,6 +1211,9 @@
 .game-meta .temp.cpu::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: var(--red); vertical-align: middle; opacity: 0.8; }
 .game-meta .temp.gpu::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: var(--cyan); vertical-align: middle; opacity: 0.8; }
 .game-meta .settings-hint { color: var(--text-mute); opacity: 0.65; transition: opacity 0.2s, color 0.2s; }
+.game-meta .temp.untested { color: var(--text-mute); font-style: italic; text-transform: none; letter-spacing: 0.02em; }
+.fps-row.is-untested .game-name { color: var(--text-dim); }
+.fps-num.muted { color: var(--text-mute); }
 
 .fps-bar-col { display: flex; flex-direction: column; gap: 6px; min-width: 240px; }
 .fps-bar-track {

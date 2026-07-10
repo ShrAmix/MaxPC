@@ -396,17 +396,18 @@ const BUILD_DATA = {
   // Заміри БЕЗ ліміту кадрів. Рекомендований ліміт для монітора — 144–180 FPS.
   // slug   — назва папки скрінів налаштувань: images/settings/<slug>/01.png, 02.png ...
   // shots  — скільки скрінів у папці (стільки й підтягнеться в галерею).
-  // tCpu / tGpu — температури під час гри (°C).
-  // lCpu / lGpu — навантаження CPU / GPU під час гри (%). Поки скрізь 20 — уточниш після замірів.
-  fpsNote: "Оптимальна картинка × кадри. Ліміт кадрів рекомендуємо ставити на 144–180 FPS — під частоту монітора, щоб відеокарта відпочивала.",
+  // tCpu / tGpu — температури під час гри (°C).  lCpu / lGpu — навантаження CPU / GPU (%).
+  // Заміряно власноруч 10.07.2026 · 1080p.  capped — FPS обмежено лімітом гри.
+  // tested:false — гра ще не тестувалась (покаже прочерки).
+  fpsNote: "Оптимальна картинка × кадри. Заміряно на цій збірці (1080p). Ліміт кадрів рекомендуємо ставити на 144–180 FPS — під частоту монітора, щоб відеокарта відпочивала.",
   fps: [
-    { name: "Counter-Strike 2",        slug: "cs2",          shots: 3, avg: 320, lo: 220, tCpu: 20, tGpu: 20, lCpu: 20, lGpu: 20, cyan: true },
-    { name: "Cyberpunk 2077",          slug: "cyberpunk",    shots: 3, avg: 95,  lo: 78,  tCpu: 20, tGpu: 20, lCpu: 20, lGpu: 20 },
-    { name: "God of War",              slug: "gow",          shots: 3, avg: 110, lo: 88,  tCpu: 20, tGpu: 20, lCpu: 20, lGpu: 20 },
-    { name: "Marvel's Spider-Man",     slug: "spiderman",    shots: 3, avg: 120, lo: 95,  tCpu: 20, tGpu: 20, lCpu: 20, lGpu: 20 },
-    { name: "Expedition 33",           slug: "expedition33", shots: 3, avg: 90,  lo: 72,  tCpu: 20, tGpu: 20, lCpu: 20, lGpu: 20 },
-    { name: "Forza Horizon 6",         slug: "forza",        shots: 3, avg: 130, lo: 102, tCpu: 20, tGpu: 20, lCpu: 20, lGpu: 20 },
-    { name: "Need for Speed Unbound",  slug: "nfs",          shots: 3, avg: 142, lo: 110, tCpu: 20, tGpu: 20, lCpu: 20, lGpu: 20 },
+    { name: "Counter-Strike 2",       slug: "cs2",          shots: 2, avg: 280, tCpu: 71,   tGpu: 67,   lCpu: 47,   lGpu: 60,   cyan: true },
+    { name: "Cyberpunk 2077",         slug: "cyberpunk",    shots: 5, avg: 192, tCpu: 73.5, tGpu: 73,   lCpu: 75.5, lGpu: 92.5 },
+    { name: "Spider-Man",             slug: "spiderman",    shots: 2, avg: 176, tCpu: 71.7, tGpu: 64.5, lCpu: 62.7, lGpu: 67.2 },
+    { name: "Expedition 33",          slug: "expedition33", shots: 3, avg: 141, tCpu: 70.3, tGpu: 68,   lCpu: 67.3, lGpu: 88.7 },
+    { name: "Need for Speed Unbound", slug: "nfs",          shots: 2, avg: 140, tCpu: 80,   tGpu: 69.3, lCpu: 75.7, lGpu: 65.7 },
+    { name: "God of War",             slug: "gow",          shots: 2, avg: 120, tCpu: 79,   tGpu: 74.5, lCpu: 61.5, lGpu: 82, capped: true },
+    { name: "Forza Horizon 6",        slug: "forza",        shots: 3, avg: null, tCpu: null, tGpu: null, lCpu: null, lGpu: null, tested: false },
   ],
 
   // Benchmark results
@@ -446,12 +447,12 @@ const BUILD_DATA = {
       real: true,
     },
     {
-      label: "Gaming · Graphics · Target",
+      label: "Gaming · Graphics · Measured",
       title: "3DMark Time Spy",
-      score: "~10 850",
-      delta: "Top 38% RTX 5060 · очікується",
-      percent: 0.81,
-      real: false,
+      score: "13 005",
+      delta: "RTX 5060 · виміряно",
+      percent: 0.86,
+      real: true,
     },
     {
       label: "Storage SSD #2 · SEQ Read · Spec",

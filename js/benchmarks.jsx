@@ -16,7 +16,7 @@ function BenchmarksSection() {
     return () => io.disconnect();
   }, []);
 
-  const maxFps = Math.max(...fps.map(g => g.avg)) * 1.05;
+  const maxFps = Math.max(...fps.map(g => g.avg || 0)) * 1.05;
 
   return (
     <section id="bench" ref={ref}>
@@ -40,7 +40,7 @@ function BenchmarksSection() {
               <h3>Ігри · 1080p</h3>
               <div className="panel-head-badge">
                 <span className="badge-dot" />
-                <span className="mono">AVG · 1% LOW · °C</span>
+                <span className="mono">AVG FPS · %/°C</span>
               </div>
             </div>
 
@@ -54,20 +54,27 @@ function BenchmarksSection() {
             )}
 
             {fps.map((g, i) => {
-              const pct = visible ? Math.min(100, (g.avg / maxFps) * 100) : 0;
+              const untested = g.tested === false;
+              const pct = (visible && g.avg) ? Math.min(100, (g.avg / maxFps) * 100) : 0;
               return (
-                <button className="fps-row is-clickable" key={i}
+                <button className={`fps-row is-clickable ${untested ? 'is-untested' : ''}`} key={i}
                   onClick={() => setLightbox({ game: g })}
                   title={`Налаштування · ${g.name}`}>
                   <div className="fps-game">
                     <span className="game-name">{g.name}</span>
                     <span className="game-meta mono">
-                      <span className="temp cpu">
-                        CPU {g.lCpu != null ? `${g.lCpu}%` : '—'} · {g.tCpu != null ? `${g.tCpu}°` : '—'}
-                      </span>
-                      <span className="temp gpu">
-                        GPU {g.lGpu != null ? `${g.lGpu}%` : '—'} · {g.tGpu != null ? `${g.tGpu}°` : '—'}
-                      </span>
+                      {untested ? (
+                        <span className="temp untested">Ще не тестувалась</span>
+                      ) : (
+                        <React.Fragment>
+                          <span className="temp cpu">
+                            CPU {g.lCpu != null ? `${g.lCpu}%` : '—'} · {g.tCpu != null ? `${g.tCpu}°` : '—'}
+                          </span>
+                          <span className="temp gpu">
+                            GPU {g.lGpu != null ? `${g.lGpu}%` : '—'} · {g.tGpu != null ? `${g.tGpu}°` : '—'}
+                          </span>
+                        </React.Fragment>
+                      )}
                       <span className="settings-hint">Налаштування ↗</span>
                     </span>
                   </div>
@@ -77,10 +84,18 @@ function BenchmarksSection() {
                         style={{ inset: `0 ${100 - pct}% 0 0`, transitionDelay: `${i * 0.09}s` }} />
                     </div>
                     <div className="fps-bar-nums mono">
-                      <span className="fps-lo">1% LOW {g.lo}</span>
+                      {g.capped
+                        ? <span className="fps-lo">FPS-ліміт</span>
+                        : <span className="fps-lo">AVG</span>}
                       <span className="fps-avg">
-                        <span className={`fps-num ${g.cyan ? 'cyan' : 'red'}`}>{g.avg}</span>
-                        {' FPS'}
+                        {g.avg != null ? (
+                          <React.Fragment>
+                            <span className={`fps-num ${g.cyan ? 'cyan' : 'red'}`}>{g.avg}</span>
+                            {' FPS'}
+                          </React.Fragment>
+                        ) : (
+                          <span className="fps-num muted">—</span>
+                        )}
                       </span>
                     </div>
                   </div>
